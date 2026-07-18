@@ -1,3 +1,4 @@
+using Launcher.App.ViewModels;
 using Launcher.Core.Instances;
 
 namespace Launcher.App.Services;
@@ -14,6 +15,10 @@ public interface ISelectedInstanceContext
     /// <summary>Same hand-off pattern as <see cref="Current"/>, but for "Найти проекты" on the instance
     /// Content tab jumping into Поиск проектов scoped to that instance's loader/version.</summary>
     LauncherInstance? ProjectSearchScope { get; set; }
+
+    /// <summary>Optional tab the detail page should open on (consumed once). Used by the builder's
+    /// "Изменение конфигов" node to jump straight to the Файлы tab of the built instance.</summary>
+    InstanceDetailTab? InitialTab { get; set; }
 }
 
 public sealed class SelectedInstanceContext : ISelectedInstanceContext
@@ -21,4 +26,6 @@ public sealed class SelectedInstanceContext : ISelectedInstanceContext
     public LauncherInstance? Current { get; set; }
 
     public LauncherInstance? ProjectSearchScope { get; set; }
+
+    public InstanceDetailTab? InitialTab { get; set; }
 }

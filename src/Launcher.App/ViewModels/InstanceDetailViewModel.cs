@@ -88,6 +88,19 @@ public partial class InstanceDetailViewModel : ObservableObject
         LogsTab = new InstanceLogsTabViewModel(logHistoryService, Instance, loggerFactory.CreateLogger<InstanceLogsTabViewModel>());
 
         LogsTab.LoadHistoryCommand.ExecuteAsync(null);
+
+        // Honour a requested landing tab (e.g. the builder's "Изменение конфигов" opens Файлы), then
+        // clear it so a plain re-open of the page starts on Content again.
+        if (selectedInstanceContext.InitialTab is { } initialTab)
+        {
+            SelectedTab = initialTab;
+            if (initialTab == InstanceDetailTab.Files)
+            {
+                FilesTab.LoadCommand.Execute(null);
+            }
+
+            selectedInstanceContext.InitialTab = null;
+        }
     }
 
     [RelayCommand]

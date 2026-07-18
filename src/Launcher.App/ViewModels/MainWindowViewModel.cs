@@ -32,6 +32,11 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _applicationTitle = "Amethyst Launcher";
 
+    /// <summary>Whether the docked right column (account/friends/news) is shown. The Конструктор сборок
+    /// page hides it so its full-width orbital canvas has room; every other page shows it.</summary>
+    [ObservableProperty]
+    private bool _isRightPanelVisible = true;
+
     [ObservableProperty]
     private string _accountDisplayName = "Игрок";
 

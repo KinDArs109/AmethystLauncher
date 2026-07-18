@@ -13,6 +13,17 @@ using Wpf.Ui;
 
 namespace Launcher.App.ViewModels;
 
+/// <summary>The four "orbital" stages of the redesigned builder — each is a node the user clicks to
+/// reveal its panel. They flow left-to-right conceptually: pick/create a build, add mods, tweak configs,
+/// then test it.</summary>
+public enum BuilderNode
+{
+    Create,
+    Mods,
+    Configs,
+    Test,
+}
+
 /// <summary>One mod in the builder's draft: which Modrinth project, which exact version, on/off.
 /// Built either from a search hit (new mod) or from an already-installed mod (edit mode).</summary>
 public partial class BuilderModItem : ObservableObject
@@ -81,7 +92,23 @@ public partial class ModpackBuilderViewModel : ObservableObject
     private readonly IDownloadCenter _downloadCenter;
     private readonly ISelectedInstanceContext _selectedInstanceContext;
     private readonly INavigationService _navigationService;
+    private readonly IInstanceLaunchService _instanceLaunchService;
     private readonly ILogger<ModpackBuilderViewModel> _logger;
+
+    // ---- Orbital node navigation (redesigned page) ----
+
+    /// <summary>Which orbital node's panel is showing. Starts on "Создать сборку".</summary>
+    [ObservableProperty]
+    private BuilderNode _activeNode = BuilderNode.Create;
+
+    /// <summary>The build the Mods/Configs/Test nodes operate on: the one just created, or the existing
+    /// one picked in the Create node.</summary>
+    public LauncherInstance? WorkingInstance => IsEditMode ? SelectedEditInstance : LastTouchedInstance;
+
+    public bool HasWorkingInstance => WorkingInstance is not null;
+
+    [RelayCommand]
+    private void SelectNode(BuilderNode node) => ActiveNode = node;
 
     public IReadOnlyList<ModLoaderType> LoaderTypes { get; } =
         [ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge, ModLoaderType.NeoForge];
@@ -90,6 +117,8 @@ public partial class ModpackBuilderViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SaveButtonText))]
+    [NotifyPropertyChangedFor(nameof(WorkingInstance))]
+    [NotifyPropertyChangedFor(nameof(HasWorkingInstance))]
     private bool _isEditMode;
 
     /// <summary>Instances the builder can edit — everything except Vanilla (no loader, no mods).</summary>
@@ -97,6 +126,8 @@ public partial class ModpackBuilderViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyPropertyChangedFor(nameof(WorkingInstance))]
+    [NotifyPropertyChangedFor(nameof(HasWorkingInstance))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private LauncherInstance? _selectedEditInstance;
 
@@ -159,6 +190,8 @@ public partial class ModpackBuilderViewModel : ObservableObject
 
     /// <summary>The instance created/edited by the last save — enables "Открыть сборку".</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WorkingInstance))]
+    [NotifyPropertyChangedFor(nameof(HasWorkingInstance))]
     private LauncherInstance? _lastTouchedInstance;
 
     public bool CanSave => !IsBusy && (IsEditMode
@@ -176,6 +209,7 @@ public partial class ModpackBuilderViewModel : ObservableObject
         IDownloadCenter downloadCenter,
         ISelectedInstanceContext selectedInstanceContext,
         INavigationService navigationService,
+        IInstanceLaunchService instanceLaunchService,
         ILogger<ModpackBuilderViewModel> logger)
     {
         _versionManifestService = versionManifestService;
@@ -188,6 +222,7 @@ public partial class ModpackBuilderViewModel : ObservableObject
         _downloadCenter = downloadCenter;
         _selectedInstanceContext = selectedInstanceContext;
         _navigationService = navigationService;
+        _instanceLaunchService = instanceLaunchService;
         _logger = logger;
 
         LoadGameVersionsCommand.ExecuteAsync(null);
@@ -661,5 +696,45 @@ public partial class ModpackBuilderViewModel : ObservableObject
 
         _selectedInstanceContext.Current = LastTouchedInstance;
         _navigationService.Navigate(typeof(InstanceDetailPage));
+    }
+
+    /// <summary>"Изменение конфигов" node — opens the working build straight on its Файлы tab, where the
+    /// /config folder lives. Configs only exist after the first launch, so we hint that if empty.</summary>
+    [RelayCommand]
+    private void OpenConfigs()
+    {
+        if (WorkingInstance is null)
+        {
+            StatusText = "Сначала создай или выбери сборку в узле «Создать сборку».";
+            ActiveNode = BuilderNode.Create;
+            return;
+        }
+
+        _selectedInstanceContext.Current = WorkingInstance;
+        _selectedInstanceContext.InitialTab = InstanceDetailTab.Files;
+        _navigationService.Navigate(typeof(InstanceDetailPage));
+    }
+
+    /// <summary>"Тестирование сборки" node — launches the working build so the user can verify it in game.</summary>
+    [RelayCommand]
+    private async Task LaunchTestAsync()
+    {
+        if (WorkingInstance is null)
+        {
+            StatusText = "Сначала создай или выбери сборку в узле «Создать сборку».";
+            ActiveNode = BuilderNode.Create;
+            return;
+        }
+
+        try
+        {
+            StatusText = "Запуск сборки для теста...";
+            await _instanceLaunchService.LaunchAsync(WorkingInstance, onStatus: s => StatusText = s);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Builder failed to launch test for '{Instance}'", WorkingInstance.Name);
+            StatusText = $"Не удалось запустить сборку: {ex.Message}";
+        }
     }
 }

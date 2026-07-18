@@ -6,8 +6,8 @@
 
 **Современный лаунчер Minecraft с облачными аккаунтами, конструктором сборок, друзьями, скинами и встроенным обходом блокировок.**
 
-[![Release](https://img.shields.io/github/v/release/{{OWNER}}/AmethystLauncher?style=flat-square&color=7C3AED)](https://github.com/{{OWNER}}/AmethystLauncher/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/{{OWNER}}/AmethystLauncher/total?style=flat-square&color=9F67F5)](https://github.com/{{OWNER}}/AmethystLauncher/releases)
+[![Release](https://img.shields.io/github/v/release/KinDArs109/AmethystLauncher?style=flat-square&color=7C3AED)](https://github.com/KinDArs109/AmethystLauncher/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/KinDArs109/AmethystLauncher/total?style=flat-square&color=9F67F5)](https://github.com/KinDArs109/AmethystLauncher/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-2A2140?style=flat-square)](#)
 
 </div>
@@ -28,7 +28,7 @@
 
 ## Установка
 
-1. Скачайте **`AmethystLauncher-Setup.exe`** со страницы [Releases](https://github.com/{{OWNER}}/AmethystLauncher/releases/latest).
+1. Скачайте **`AmethystLauncher-Setup.exe`** со страницы [Releases](https://github.com/KinDArs109/AmethystLauncher/releases/latest).
 2. Запустите установщик — лаунчер установится и создаст ярлык.
 3. Дальше лаунчер обновляется сам: при выходе новой версии он предложит скачать её при запуске.
 
@@ -41,7 +41,7 @@
 Требуется **.NET 8 SDK**.
 
 ```bash
-git clone https://github.com/{{OWNER}}/AmethystLauncher.git
+git clone https://github.com/KinDArs109/AmethystLauncher.git
 cd AmethystLauncher
 dotnet build MinecraftLauncher.sln
 dotnet run --project src/Launcher.App

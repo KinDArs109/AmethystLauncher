@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-$repoUrl   = "https://github.com/{{OWNER}}/AmethystLauncher"
+$repoUrl   = "https://github.com/KinDArs109/AmethystLauncher"
 $publishDir = Join-Path $repoRoot "build\publish"
 $releaseDir = Join-Path $repoRoot "build\releases"
 $project    = "src/Launcher.App/Launcher.App.csproj"

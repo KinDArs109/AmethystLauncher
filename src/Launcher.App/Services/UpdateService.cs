@@ -25,7 +25,7 @@ public sealed class UpdateService : IUpdateService
 {
     // The public GitHub repository that hosts the Velopack release feed. Filled in once the repo is
     // created; until then IsInstalled is false in dev builds so this is never actually contacted.
-    public const string RepositoryUrl = "https://github.com/AMETHYST_OWNER/AmethystLauncher";
+    public const string RepositoryUrl = "https://github.com/KinDArs109/AmethystLauncher";
 
     private readonly ILogger<UpdateService> _logger;
     private readonly UpdateManager _manager;

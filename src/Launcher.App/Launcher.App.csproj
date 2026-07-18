@@ -30,8 +30,8 @@
     <Product>Amethyst Launcher</Product>
     <AssemblyTitle>Amethyst Launcher</AssemblyTitle>
     <Company>Amethyst Launcher</Company>
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0</FileVersion>
+    <Version>0.0.1</Version>
+    <FileVersion>0.0.1</FileVersion>
   </PropertyGroup>
 
   <!-- Logo bitmap used by the window/taskbar icon and the titlebar mark. -->

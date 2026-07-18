@@ -84,7 +84,7 @@ public partial class ModpackBuilderViewModel : ObservableObject
     private readonly ILogger<ModpackBuilderViewModel> _logger;
 
     public IReadOnlyList<ModLoaderType> LoaderTypes { get; } =
-        [ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge];
+        [ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge, ModLoaderType.NeoForge];
 
     // ---- Mode ----
 
@@ -126,13 +126,15 @@ public partial class ModpackBuilderViewModel : ObservableObject
     private bool _isSearchOpen;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
     private string _searchText = "";
 
     [ObservableProperty]
     private bool _isSearching;
 
     public ObservableCollection<ModrinthSearchHit> SearchResults { get; } = [];
+
+    /// <summary>Restarted on every keystroke so the live search debounces instead of firing per character.</summary>
+    private CancellationTokenSource? _searchDebounceCts;
 
     // ---- Draft ----
 
@@ -313,19 +315,59 @@ public partial class ModpackBuilderViewModel : ObservableObject
         : (SelectedGameVersion?.Id, SelectedLoaderType.ToString().ToLowerInvariant());
 
     [RelayCommand]
-    private void ToggleSearch() => IsSearchOpen = !IsSearchOpen;
+    private void ToggleSearch()
+    {
+        IsSearchOpen = !IsSearchOpen;
+        // Opening the panel immediately shows popular mods for the current version/loader (like the
+        // "Поиск проектов" tab) — no need to type first.
+        if (IsSearchOpen && SearchResults.Count == 0)
+        {
+            _ = RunSearchAsync();
+        }
+    }
 
-    private bool CanSearch => !string.IsNullOrWhiteSpace(SearchText);
+    partial void OnSearchTextChanged(string value) => DebounceSearch();
 
-    [RelayCommand(CanExecute = nameof(CanSearch))]
-    private async Task SearchAsync()
+    /// <summary>Live search: query Modrinth ~350 ms after the user stops typing.</summary>
+    private void DebounceSearch()
+    {
+        _searchDebounceCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _searchDebounceCts = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(350, cts.Token);
+                await App.Current.Dispatcher.InvokeAsync(async () => await RunSearchAsync(cts.Token));
+            }
+            catch (TaskCanceledException)
+            {
+                // superseded by a newer keystroke
+            }
+        });
+    }
+
+    [RelayCommand]
+    private Task SearchAsync() => RunSearchAsync();
+
+    private async Task RunSearchAsync(CancellationToken ct = default)
     {
         try
         {
             IsSearching = true;
+            var query = SearchText.Trim();
             var (gameVersion, loaderFacet) = CurrentTarget;
+            // Empty query = browse the most popular mods; a typed query ranks by relevance.
+            var sort = query.Length == 0 ? "downloads" : "relevance";
             var result = await _modrinthClient.SearchProjectsAsync(
-                SearchText.Trim(), "mod", gameVersion, loaderFacet, sortIndex: "relevance", limit: 12);
+                query, "mod", gameVersion, loaderFacet, sortIndex: sort, limit: 20);
+
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
 
             SearchResults.Clear();
             foreach (var hit in result.Hits)
@@ -462,20 +504,11 @@ public partial class ModpackBuilderViewModel : ObservableObject
                     var effectiveVersion = await _instanceVersionResolver.ResolveAsync(instance, download.Progress.SetStatus);
                     await _instancePreparer.PrepareAsync(effectiveVersion, instance.DirectoryPath, progress: download.Progress);
 
-                    foreach (var mod in mods)
-                    {
-                        download.Progress.SetStatus($"Установка «{mod.Title}»...");
-                        var installed = await _modInstallService.InstallModAsync(
-                            mod.ProjectId, mod.Title, gameVersionId, loaderFacet, instance.DirectoryPath,
-                            projectType: "mod", versionId: mod.VersionId);
+                    var failed = await InstallModsParallelAsync(mods, gameVersionId, loaderFacet, instance.DirectoryPath, download.Progress.SetStatus);
 
-                        if (!mod.IsEnabled)
-                        {
-                            await _modInstallService.SetEnabledAsync(instance.DirectoryPath, installed.ProjectId, enabled: false);
-                        }
-                    }
-
-                    _downloadCenter.Complete(download);
+                    _downloadCenter.Complete(download, failed.Count == 0
+                        ? null
+                        : $"Готово, но не установились: {string.Join(", ", failed)}");
                 }
                 catch (Exception ex)
                 {
@@ -497,6 +530,50 @@ public partial class ModpackBuilderViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Installs a batch of mods concurrently (up to 4 at once) instead of one-by-one, so a big
+    /// draft finishes far faster. Each mod is independent: a single failure is collected and reported at
+    /// the end rather than aborting the whole batch. Returns the titles that failed.</summary>
+    private async Task<IReadOnlyList<string>> InstallModsParallelAsync(
+        IReadOnlyList<(string ProjectId, string Title, string? VersionId, bool IsEnabled)> mods,
+        string gameVersionId,
+        string loaderFacet,
+        string instanceDir,
+        Action<string> setStatus)
+    {
+        using var gate = new SemaphoreSlim(4);
+        var failed = new System.Collections.Concurrent.ConcurrentBag<string>();
+        var done = 0;
+
+        var tasks = mods.Select(async mod =>
+        {
+            await gate.WaitAsync();
+            try
+            {
+                setStatus($"Установка модов ({Interlocked.Increment(ref done)}/{mods.Count})...");
+                var installed = await _modInstallService.InstallModAsync(
+                    mod.ProjectId, mod.Title, gameVersionId, loaderFacet, instanceDir,
+                    projectType: "mod", versionId: mod.VersionId);
+
+                if (!mod.IsEnabled)
+                {
+                    await _modInstallService.SetEnabledAsync(instanceDir, installed.ProjectId, enabled: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Builder failed to install mod {Mod}", mod.Title);
+                failed.Add(mod.Title);
+            }
+            finally
+            {
+                gate.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
+        return failed.ToArray();
     }
 
     /// <summary>Edit mode: applies the draft's diff to the selected instance — uninstall removed mods,
@@ -538,33 +615,20 @@ public partial class ModpackBuilderViewModel : ObservableObject
                     await _modInstallService.UninstallModAsync(instance.DirectoryPath, projectId);
                 }
 
+                // Mods that need a (re)install — brand-new ones and version changes — go through the
+                // parallel installer. A version change is uninstall-then-install, so do the uninstall
+                // first (cheap, sequential) and let the install run in the concurrent batch.
+                var toInstall = new List<(string ProjectId, string Title, string? VersionId, bool IsEnabled)>();
                 foreach (var item in items)
                 {
                     if (!item.WasInstalled)
                     {
-                        download.Progress.SetStatus($"Установка «{item.Title}»...");
-                        var installed = await _modInstallService.InstallModAsync(
-                            item.ProjectId, item.Title, gameVersionId, loaderFacet, instance.DirectoryPath,
-                            projectType: "mod", versionId: item.TargetVersionId);
-                        if (!item.IsEnabled)
-                        {
-                            await _modInstallService.SetEnabledAsync(instance.DirectoryPath, installed.ProjectId, enabled: false);
-                        }
-
-                        continue;
+                        toInstall.Add((item.ProjectId, item.Title, item.TargetVersionId, item.IsEnabled));
                     }
-
-                    if (item.TargetVersionId is not null && item.TargetVersionId != item.OriginalVersionId)
+                    else if (item.TargetVersionId is not null && item.TargetVersionId != item.OriginalVersionId)
                     {
-                        download.Progress.SetStatus($"Смена версии «{item.Title}»...");
                         await _modInstallService.UninstallModAsync(instance.DirectoryPath, item.ProjectId);
-                        await _modInstallService.InstallModAsync(
-                            item.ProjectId, item.Title, gameVersionId, loaderFacet, instance.DirectoryPath,
-                            projectType: "mod", versionId: item.TargetVersionId);
-                        if (!item.IsEnabled)
-                        {
-                            await _modInstallService.SetEnabledAsync(instance.DirectoryPath, item.ProjectId, enabled: false);
-                        }
+                        toInstall.Add((item.ProjectId, item.Title, item.TargetVersionId, item.IsEnabled));
                     }
                     else if (item.IsEnabled != item.OriginalEnabled)
                     {
@@ -572,7 +636,12 @@ public partial class ModpackBuilderViewModel : ObservableObject
                     }
                 }
 
-                _downloadCenter.Complete(download);
+                var failed = await InstallModsParallelAsync(
+                    toInstall, gameVersionId, loaderFacet, instance.DirectoryPath, download.Progress.SetStatus);
+
+                _downloadCenter.Complete(download, failed.Count == 0
+                    ? null
+                    : $"Готово, но не установились: {string.Join(", ", failed)}");
             }
             catch (Exception ex)
             {

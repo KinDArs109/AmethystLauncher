@@ -6,7 +6,11 @@
 
 **Современный лаунчер Minecraft с облачными аккаунтами, конструктором сборок, друзьями, скинами и встроенным обходом блокировок.**
 
-[![Release](https://img.shields.io/github/v/release/KinDArs109/AmethystLauncher?style=flat-square&color=7C3AED)](https://github.com/KinDArs109/AmethystLauncher/releases/latest)
+> ⚠️ **Бета-тестирование.** Текущая версия — **0.0.1**: лаунчер находится в открытом бета-тесте, возможны ошибки и изменения. Номер версии начинается с `0.0.x` именно потому, что это бета.
+
+> 🤖 При создании лаунчера использовалась нейросеть (ИИ-ассистент).
+
+[![Release](https://img.shields.io/github/v/release/KinDArs109/AmethystLauncher?include_prereleases&style=flat-square&color=7C3AED&label=beta)](https://github.com/KinDArs109/AmethystLauncher/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/KinDArs109/AmethystLauncher/total?style=flat-square&color=9F67F5)](https://github.com/KinDArs109/AmethystLauncher/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-2A2140?style=flat-square)](#)
 
@@ -16,7 +20,7 @@
 
 ## Возможности
 
-- **Библиотека сборок** — создание, клонирование и запуск инстансов Fabric / Forge / Quilt / Vanilla с раздельными настройками (ОЗУ, Java, аргументы JVM, размер окна).
+- **Библиотека сборок** — создание, клонирование и запуск инстансов Fabric / Quilt / Forge / NeoForge / Vanilla с раздельными настройками (ОЗУ, Java, аргументы JVM, размер окна).
 - **Поиск проектов** — установка модов, ресурспаков, шейдеров и наборов данных прямо из Modrinth с фильтрами и сортировкой, установка в существующую сборку или в новую.
 - **Конструктор сборок** — сборка модпака из локальных модов и проектов Modrinth в один клик.
 - **Облачные аккаунты** — вход и регистрация с синхронизацией через Supabase.
@@ -29,7 +33,7 @@
 ## Установка
 
 1. Скачайте **`AmethystLauncher-Setup.exe`** со страницы [Releases](https://github.com/KinDArs109/AmethystLauncher/releases/latest).
-2. Запустите установщик — лаунчер установится и создаст ярлык.
+2. Запустите установщик — он сам установит нужный компонент **.NET 8** (если его нет), поставит лаунчер и создаст ярлык.
 3. Дальше лаунчер обновляется сам: при выходе новой версии он предложит скачать её при запуске.
 
 ## Обновления
@@ -38,7 +42,7 @@
 
 ## Сборка из исходников
 
-Требуется **.NET 8 SDK**.
+Требуется **.NET 8 SDK** (только для сборки из исходников; готовый установщик .NET подтягивает сам).
 
 ```bash
 git clone https://github.com/KinDArs109/AmethystLauncher.git
@@ -46,17 +50,6 @@ cd AmethystLauncher
 dotnet build MinecraftLauncher.sln
 dotnet run --project src/Launcher.App
 ```
-
-### Выпуск релиза (для мейнтейнера)
-
-```powershell
-# один раз:
-dotnet tool install -g vpk
-# каждый релиз (подставьте номер версии):
-./build/release.ps1 -Version 1.0.1
-```
-
-Скрипт публикует приложение и упаковывает его в установщик Velopack; готовые файлы из `build/releases` загружаются в новый GitHub Release.
 
 ## Технологии
 

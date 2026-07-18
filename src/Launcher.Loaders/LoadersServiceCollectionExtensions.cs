@@ -1,6 +1,7 @@
 using Launcher.Loaders.Abstractions;
 using Launcher.Loaders.Fabric;
 using Launcher.Loaders.Forge;
+using Launcher.Loaders.NeoForge;
 using Launcher.Loaders.Quilt;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ public static class LoadersServiceCollectionExtensions
         services.AddHttpClient<ILoaderInstaller, FabricLoaderInstaller>();
         services.AddHttpClient<ILoaderInstaller, QuiltLoaderInstaller>();
         services.AddHttpClient<ILoaderInstaller, ForgeLoaderInstaller>();
+        services.AddHttpClient<ILoaderInstaller, NeoForgeLoaderInstaller>();
 
         return services;
     }

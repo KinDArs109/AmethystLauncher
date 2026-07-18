@@ -24,7 +24,7 @@ public partial class CreateInstanceViewModel : ObservableObject
     private bool _nameManuallyEdited;
 
     public IReadOnlyList<ModLoaderType> LoaderTypes { get; } =
-        [ModLoaderType.Vanilla, ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge];
+        [ModLoaderType.Vanilla, ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge, ModLoaderType.NeoForge];
 
     [ObservableProperty]
     private string _name = "";

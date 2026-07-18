@@ -4,8 +4,8 @@
     then (optionally) uploads the result as a GitHub Release.
 
 .EXAMPLE
-    ./build/release.ps1 -Version 1.0.1
-    ./build/release.ps1 -Version 1.0.1 -Upload
+    ./build/release.ps1 -Version 0.0.2
+    ./build/release.ps1 -Version 0.0.2 -Upload
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Version,
@@ -22,9 +22,11 @@ $releaseDir = Join-Path $repoRoot "build\releases"
 $project    = "src/Launcher.App/Launcher.App.csproj"
 $icon       = "src/Launcher.App/Assets/logo.ico"
 
-Write-Host "==> Publishing $project (win-x64, self-contained)..." -ForegroundColor Magenta
+Write-Host "==> Publishing $project (win-x64, framework-dependent)..." -ForegroundColor Magenta
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-dotnet publish $project -c Release -r win-x64 --self-contained true `
+# Framework-dependent: keeps the download small and lets the installer pull in the .NET 8 Desktop
+# Runtime itself (see --framework on vpk pack below) instead of requiring the user to install it.
+dotnet publish $project -c Release -r win-x64 --self-contained false `
     -p:Version=$Version -o $publishDir
 
 # Ensure vpk (Velopack CLI) is available.
@@ -42,6 +44,7 @@ vpk pack `
     --mainExe "Launcher.App.exe" `
     --packTitle "Amethyst Launcher" `
     --icon $icon `
+    --framework net8.0-x64-desktop `
     --outputDir $releaseDir
 
 Write-Host "==> Done. Installer + feed are in $releaseDir" -ForegroundColor Green

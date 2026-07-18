@@ -37,6 +37,9 @@
                 <StackPanel VerticalAlignment="Center" Margin="16,0,0,0">
                     <TextBlock Text="Amethyst" FontSize="24" FontWeight="Bold" Foreground="White" />
                     <TextBlock Text="Launcher" FontSize="16" FontWeight="SemiBold" Foreground="#B9A6E6" Margin="0,-2,0,0" />
+                    <Border Margin="0,4,0,0" Padding="7,1" CornerRadius="6" HorizontalAlignment="Left" Background="#332A57">
+                        <TextBlock Text="0.0.1 · Бета-тест" FontSize="10.5" FontWeight="SemiBold" Foreground="#C9BEE4" />
+                    </Border>
                 </StackPanel>
             </StackPanel>
 

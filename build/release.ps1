@@ -47,6 +47,15 @@ vpk pack `
 Write-Host "==> Done. Installer + feed are in $releaseDir" -ForegroundColor Green
 
 if ($Upload) {
+    # Prefer an explicit token; otherwise borrow the one the GitHub CLI is already logged in with.
+    $token = $env:GITHUB_TOKEN
+    if ([string]::IsNullOrWhiteSpace($token) -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+        $token = (gh auth token).Trim()
+    }
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        throw "No GitHub token. Run 'gh auth login' or set `$env:GITHUB_TOKEN."
+    }
+
     Write-Host "==> Uploading GitHub Release v$Version..." -ForegroundColor Magenta
     vpk upload github `
         --repoUrl $repoUrl `
@@ -54,8 +63,8 @@ if ($Upload) {
         --releaseName "Amethyst Launcher $Version" `
         --tag "v$Version" `
         --outputDir $releaseDir `
-        --token $env:GITHUB_TOKEN
+        --token $token
     Write-Host "==> Release published." -ForegroundColor Green
 } else {
-    Write-Host "Skip upload. Re-run with -Upload (and `$env:GITHUB_TOKEN set) to publish." -ForegroundColor Yellow
+    Write-Host "Skip upload. Re-run with -Upload to publish the release." -ForegroundColor Yellow
 }

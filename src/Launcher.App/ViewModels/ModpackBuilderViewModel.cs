@@ -101,14 +101,51 @@ public partial class ModpackBuilderViewModel : ObservableObject
     [ObservableProperty]
     private BuilderNode _activeNode = BuilderNode.Create;
 
-    /// <summary>The build the Mods/Configs/Test nodes operate on: the one just created, or the existing
-    /// one picked in the Create node.</summary>
+    /// <summary>The build the Mods/Configs/Play nodes operate on: the one just created, or the existing
+    /// one picked by clicking the orbital's centre.</summary>
     public LauncherInstance? WorkingInstance => IsEditMode ? SelectedEditInstance : LastTouchedInstance;
 
     public bool HasWorkingInstance => WorkingInstance is not null;
 
+    /// <summary>The centre-of-orbit build picker (list of existing builds) is open.</summary>
+    [ObservableProperty]
+    private bool _isBuildPickerOpen;
+
+    /// <summary>A build passed in from a library click, applied once the instance list has loaded.</summary>
+    private string? _pendingBuilderPath;
+
     [RelayCommand]
     private void SelectNode(BuilderNode node) => ActiveNode = node;
+
+    partial void OnActiveNodeChanged(BuilderNode value)
+    {
+        // "Создать" is strictly for new builds — entering it drops any existing-build selection so the
+        // form starts blank. Existing builds are chosen by clicking the orbit's centre instead.
+        if (value == BuilderNode.Create)
+        {
+            SetCreateMode();
+        }
+        // Entering "Моды" surfaces mods right away (popular ones for the current version/loader) so the
+        // list isn't empty until the user types.
+        else if (value == BuilderNode.Mods && SearchResults.Count == 0)
+        {
+            _ = RunSearchAsync();
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleBuildPicker() => IsBuildPickerOpen = !IsBuildPickerOpen;
+
+    /// <summary>Picks an existing build to work on (from the centre picker) — switches to edit mode and
+    /// jumps to the Моды node so the user can start changing it.</summary>
+    [RelayCommand]
+    private void PickBuild(LauncherInstance instance)
+    {
+        IsBuildPickerOpen = false;
+        IsEditMode = true;
+        SelectedEditInstance = instance;
+        ActiveNode = BuilderNode.Mods;
+    }
 
     public IReadOnlyList<ModLoaderType> LoaderTypes { get; } =
         [ModLoaderType.Fabric, ModLoaderType.Quilt, ModLoaderType.Forge, ModLoaderType.NeoForge];
@@ -225,6 +262,14 @@ public partial class ModpackBuilderViewModel : ObservableObject
         _instanceLaunchService = instanceLaunchService;
         _logger = logger;
 
+        // A library click hands off the build to open here (consumed once); applied after the instance
+        // list loads so we can select the matching entry.
+        if (_selectedInstanceContext.BuilderInstance is { } handoff)
+        {
+            _pendingBuilderPath = handoff.DirectoryPath;
+            _selectedInstanceContext.BuilderInstance = null;
+        }
+
         LoadGameVersionsCommand.ExecuteAsync(null);
         _ = LoadEditableInstancesAsync();
     }
@@ -238,6 +283,19 @@ public partial class ModpackBuilderViewModel : ObservableObject
             foreach (var instance in _instanceLibrary.Instances.Where(i => i.LoaderType != "Vanilla"))
             {
                 EditableInstances.Add(instance);
+            }
+
+            // Honour a build handed off from a library click: open it pre-selected for editing.
+            if (_pendingBuilderPath is not null)
+            {
+                var match = EditableInstances.FirstOrDefault(i => i.DirectoryPath == _pendingBuilderPath);
+                _pendingBuilderPath = null;
+                if (match is not null)
+                {
+                    IsEditMode = true;
+                    SelectedEditInstance = match;
+                    ActiveNode = BuilderNode.Mods;
+                }
             }
         }
         catch (Exception ex)

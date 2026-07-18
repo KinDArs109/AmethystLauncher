@@ -112,8 +112,10 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private void OpenInstance(LauncherInstance instance)
     {
-        _selectedInstanceContext.Current = instance;
-        _navigationService.Navigate(typeof(InstanceDetailPage));
+        // Clicking a build opens it in the Конструктор сборок, pre-selected for editing (mods/configs/
+        // play all hang off there now). The builder's "Конфиги" node still reaches the full detail page.
+        _selectedInstanceContext.BuilderInstance = instance;
+        _navigationService.Navigate(typeof(ModpackBuilderPage));
     }
 
     private void RebuildGroups()

@@ -106,60 +106,108 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- ===== Orbital cluster ===== -->
-                <Grid Grid.Column="0" Width="460" Height="460" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- ===== Orbital cluster (nodes orbit; positions driven by code-behind) ===== -->
+                <Grid Grid.Column="0" x:Name="OrbitArea" Width="460" Height="460"
+                      HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
+                      MouseEnter="OnOrbitMouseEnter" MouseLeave="OnOrbitMouseLeave">
 
-                    <!-- rotating dashed orbit ring -->
-                    <Ellipse Width="320" Height="320" HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Stroke="#5A4694" StrokeThickness="1.4" StrokeDashArray="1 7" StrokeDashCap="Round"
-                             RenderTransformOrigin="0.5,0.5" Opacity="0.9">
-                        <Ellipse.RenderTransform><RotateTransform x:Name="OrbitRotate" /></Ellipse.RenderTransform>
-                        <Ellipse.Triggers>
-                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                <BeginStoryboard>
-                                    <Storyboard RepeatBehavior="Forever">
-                                        <DoubleAnimation Storyboard.TargetName="OrbitRotate" Storyboard.TargetProperty="Angle"
-                                                         From="0" To="360" Duration="0:0:48" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                        </Ellipse.Triggers>
-                    </Ellipse>
-                    <Ellipse Width="210" Height="210" HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Stroke="#40356B" StrokeThickness="1" Opacity="0.7" />
+                    <!-- static guide rings -->
+                    <Ellipse Width="300" Height="300" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Stroke="#5A4694" StrokeThickness="1.4" StrokeDashArray="1 7" StrokeDashCap="Round" Opacity="0.9" />
+                    <Ellipse Width="300" Height="300" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Stroke="#40356B" StrokeThickness="1" Opacity="0.5" />
 
-                    <!-- central hub: current build state -->
-                    <Border Width="168" Height="168" CornerRadius="84" HorizontalAlignment="Center" VerticalAlignment="Center"
-                            BorderBrush="#6C55B8" BorderThickness="1.5">
-                        <Border.Background>
-                            <RadialGradientBrush>
-                                <GradientStop Color="#2A1F55" Offset="0" />
-                                <GradientStop Color="#171233" Offset="1" />
-                            </RadialGradientBrush>
-                        </Border.Background>
-                        <StackPanel VerticalAlignment="Center" Margin="14,0">
-                            <ui:SymbolIcon Symbol="Wrench24" FontSize="26" Foreground="#B79BF3" HorizontalAlignment="Center" />
-                            <TextBlock Text="Сборка" FontSize="11" Foreground="#8E7EC0" HorizontalAlignment="Center" Margin="0,6,0,2" />
-                            <TextBlock HorizontalAlignment="Center" TextAlignment="Center" FontWeight="SemiBold" FontSize="13"
-                                       Foreground="White" TextTrimming="CharacterEllipsis" MaxWidth="140">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="не выбрана" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ViewModel.HasWorkingInstance}" Value="True">
-                                                <Setter Property="Text" Value="{Binding ViewModel.WorkingInstance.Name}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
+                    <!-- central hub — click to pick an existing build; shows the selected one -->
+                    <Button x:Name="Hub" Width="168" Height="168" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Cursor="Hand" Background="Transparent" BorderThickness="0"
+                            Command="{Binding ViewModel.ToggleBuildPickerCommand}" ToolTip="Выбрать существующую сборку">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="HubRing" Width="168" Height="168" CornerRadius="84"
+                                        BorderBrush="#6C55B8" BorderThickness="1.5">
+                                    <Border.Background>
+                                        <RadialGradientBrush>
+                                            <GradientStop Color="#2A1F55" Offset="0" />
+                                            <GradientStop Color="#171233" Offset="1" />
+                                        </RadialGradientBrush>
+                                    </Border.Background>
+                                    <StackPanel VerticalAlignment="Center" Margin="16,0">
+                                        <ui:SymbolIcon Symbol="Wrench24" FontSize="24" Foreground="#B79BF3" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Сборка" FontSize="11" Foreground="#8E7EC0" HorizontalAlignment="Center" Margin="0,6,0,2" />
+                                        <TextBlock HorizontalAlignment="Center" TextAlignment="Center" FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="White" TextTrimming="CharacterEllipsis" MaxWidth="136">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="выбрать" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ViewModel.HasWorkingInstance}" Value="True">
+                                                            <Setter Property="Text" Value="{Binding ViewModel.WorkingInstance.Name}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="нажми, чтобы выбрать" FontSize="9.5" Foreground="#6E5FA0" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="HubRing" Property="BorderBrush" Value="#9B7DEC" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
-                    <!-- Node: Создать (top) -->
-                    <Button VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,6,0,0"
-                            Command="{Binding ViewModel.SelectNodeCommand}"
-                            CommandParameter="{x:Static viewModels:BuilderNode.Create}" Cursor="Hand">
+                    <!-- build picker, opened from the hub -->
+                    <Popup IsOpen="{Binding ViewModel.IsBuildPickerOpen, Mode=TwoWay}" PlacementTarget="{Binding ElementName=Hub}"
+                           Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                        <Border CornerRadius="12" Background="#F21A1330" BorderBrush="#4A3B7A" BorderThickness="1" Padding="10" Margin="0,6,0,0" MinWidth="240">
+                            <StackPanel>
+                                <TextBlock Text="Выбери сборку" FontWeight="SemiBold" Foreground="White" Margin="2,0,0,8" />
+                                <TextBlock Text="Пока нет сборок с загрузчиком — создай новую." FontSize="12" Foreground="#A99AD0" Margin="2,0,0,4"
+                                           Visibility="{Binding ViewModel.EditableInstances.Count, Converter={StaticResource ZeroCountToVis}}" />
+                                <ItemsControl ItemsSource="{Binding ViewModel.EditableInstances}" MaxHeight="260">
+                                    <ItemsControl.Template>
+                                        <ControlTemplate TargetType="ItemsControl">
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter /></ScrollViewer>
+                                        </ControlTemplate>
+                                    </ItemsControl.Template>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button HorizontalContentAlignment="Left" Margin="0,0,0,4" Padding="10,7" Cursor="Hand"
+                                                    Background="#1AFFFFFF" BorderThickness="0"
+                                                    Command="{Binding DataContext.ViewModel.PickBuildCommand, ElementName=OrbitArea}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}" Padding="10,7">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="SemiBold" FontSize="13" />
+                                                                <TextBlock FontSize="11" Foreground="#A99AD0">
+                                                                    <Run Text="{Binding LoaderType, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding VersionId, Mode=OneWay}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="#33FFFFFF" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <!-- Node: Создать -->
+                    <Button x:Name="NodeCreate" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"
+                            Command="{Binding ViewModel.SelectNodeCommand}" CommandParameter="{x:Static viewModels:BuilderNode.Create}">
+                        <Button.RenderTransform><TranslateTransform x:Name="TCreate" /></Button.RenderTransform>
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <StackPanel Background="Transparent">
@@ -182,10 +230,10 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Node: Моды (right) -->
-                    <Button VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,6,0"
-                            Command="{Binding ViewModel.SelectNodeCommand}"
-                            CommandParameter="{x:Static viewModels:BuilderNode.Mods}" Cursor="Hand">
+                    <!-- Node: Моды -->
+                    <Button x:Name="NodeMods" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"
+                            Command="{Binding ViewModel.SelectNodeCommand}" CommandParameter="{x:Static viewModels:BuilderNode.Mods}">
+                        <Button.RenderTransform><TranslateTransform x:Name="TMods" /></Button.RenderTransform>
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <StackPanel Background="Transparent">
@@ -208,10 +256,10 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Node: Конфиги (left) -->
-                    <Button VerticalAlignment="Center" HorizontalAlignment="Left" Margin="6,0,0,0"
-                            Command="{Binding ViewModel.SelectNodeCommand}"
-                            CommandParameter="{x:Static viewModels:BuilderNode.Configs}" Cursor="Hand">
+                    <!-- Node: Конфиги -->
+                    <Button x:Name="NodeConfigs" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"
+                            Command="{Binding ViewModel.SelectNodeCommand}" CommandParameter="{x:Static viewModels:BuilderNode.Configs}">
+                        <Button.RenderTransform><TranslateTransform x:Name="TConfigs" /></Button.RenderTransform>
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <StackPanel Background="Transparent">
@@ -234,10 +282,10 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Node: Тест (bottom) -->
-                    <Button VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,6"
-                            Command="{Binding ViewModel.SelectNodeCommand}"
-                            CommandParameter="{x:Static viewModels:BuilderNode.Test}" Cursor="Hand">
+                    <!-- Node: Играть -->
+                    <Button x:Name="NodePlay" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"
+                            Command="{Binding ViewModel.SelectNodeCommand}" CommandParameter="{x:Static viewModels:BuilderNode.Test}">
+                        <Button.RenderTransform><TranslateTransform x:Name="TPlay" /></Button.RenderTransform>
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <StackPanel Background="Transparent">
@@ -245,7 +293,7 @@
                                             Background="#221A44" BorderBrush="#4C3D82" BorderThickness="1.5">
                                         <ui:SymbolIcon Symbol="Play24" FontSize="24" Foreground="#C9BAF5" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="Тест" Style="{StaticResource OrbitNodeText}" />
+                                    <TextBlock Text="Играть" Style="{StaticResource OrbitNodeText}" />
                                 </StackPanel>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
@@ -282,54 +330,18 @@
                             </Grid.Style>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <TextBlock Text="Создать или выбрать сборку" FontSize="17" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,4" />
-                                    <TextBlock Text="Начни новую сборку или открой уже существующую, чтобы доработать её." FontSize="12.5" Foreground="#A99AD0" Margin="0,0,0,14" TextWrapping="Wrap" />
+                                    <TextBlock Text="Создать сборку" FontSize="17" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,4" />
+                                    <TextBlock Text="Задай параметры новой сборки. Чтобы открыть уже существующую — нажми на центр круга." FontSize="12.5" Foreground="#A99AD0" Margin="0,0,0,14" TextWrapping="Wrap" />
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                        <ui:Button Content="Новая" Command="{Binding ViewModel.SetCreateModeCommand}" Margin="0,0,8,0" Padding="16,7">
-                                            <ui:Button.Style>
-                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                                    <Setter Property="Appearance" Value="Secondary" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding ViewModel.IsEditMode}" Value="False">
-                                                            <Setter Property="Appearance" Value="Primary" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </ui:Button.Style>
-                                        </ui:Button>
-                                        <ui:Button Content="Существующая" Command="{Binding ViewModel.SetEditModeCommand}" Padding="16,7">
-                                            <ui:Button.Style>
-                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                                    <Setter Property="Appearance" Value="Secondary" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding ViewModel.IsEditMode}" Value="True">
-                                                            <Setter Property="Appearance" Value="Primary" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </ui:Button.Style>
-                                        </ui:Button>
-                                    </StackPanel>
-
-                                    <!-- New build -->
-                                    <StackPanel Visibility="{Binding ViewModel.IsEditMode, Converter={StaticResource InverseBoolToVis}}">
-                                        <TextBlock Text="Название" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
-                                        <ui:TextBox Text="{Binding ViewModel.Name, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Моя сборка" Margin="0,0,0,12" />
-                                        <TextBlock Text="Версия Minecraft" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
-                                        <ComboBox ItemsSource="{Binding ViewModel.GameVersions}" SelectedItem="{Binding ViewModel.SelectedGameVersion}" DisplayMemberPath="Id" Margin="0,0,0,12" />
-                                        <TextBlock Text="Загрузчик модов" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
-                                        <ComboBox ItemsSource="{Binding ViewModel.LoaderTypes}" SelectedItem="{Binding ViewModel.SelectedLoaderType}" />
-                                    </StackPanel>
-
-                                    <!-- Existing build -->
-                                    <StackPanel Visibility="{Binding ViewModel.IsEditMode, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="Какую сборку дорабатываем?" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
-                                        <ComboBox ItemsSource="{Binding ViewModel.EditableInstances}" SelectedItem="{Binding ViewModel.SelectedEditInstance}" DisplayMemberPath="Name" />
-                                    </StackPanel>
+                                    <TextBlock Text="Название" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
+                                    <ui:TextBox Text="{Binding ViewModel.Name, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Моя сборка" Margin="0,0,0,12" />
+                                    <TextBlock Text="Версия Minecraft" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding ViewModel.GameVersions}" SelectedItem="{Binding ViewModel.SelectedGameVersion}" DisplayMemberPath="Id" Margin="0,0,0,12" />
+                                    <TextBlock Text="Загрузчик модов" FontSize="12" Foreground="#A99AD0" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding ViewModel.LoaderTypes}" SelectedItem="{Binding ViewModel.SelectedLoaderType}" />
 
                                     <ui:InfoBar IsOpen="True" Severity="Informational" Margin="0,16,0,0" IsClosable="False"
-                                                Title="Дальше" Message="Перейди к узлу «Моды», чтобы добавить содержимое и сохранить сборку." />
+                                                Title="Дальше" Message="Перейди к узлу «Моды», чтобы добавить содержимое и создать сборку." />
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
@@ -502,10 +514,10 @@
                                 </Style>
                             </Grid.Style>
                             <StackPanel>
-                                <TextBlock Text="Тестирование сборки" FontSize="17" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,6" />
+                                <TextBlock Text="Играть" FontSize="17" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,6" />
                                 <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="#A99AD0" Margin="0,0,0,14"
-                                           Text="Запусти сборку, чтобы проверить, что всё работает: моды загрузятся, игра стартует." />
-                                <ui:Button Content="Запустить сборку" Icon="{ui:SymbolIcon Play24}" Style="{StaticResource LauncherGlowButtonStyle}"
+                                           Text="Запусти сборку: моды загрузятся, игра стартует. Заодно проверишь, что всё работает." />
+                                <ui:Button Content="Запустить" Icon="{ui:SymbolIcon Play24}" Style="{StaticResource LauncherGlowButtonStyle}"
                                            HorizontalAlignment="Left" Command="{Binding ViewModel.LaunchTestCommand}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
                                             Visibility="{Binding ViewModel.StatusText, Converter={StaticResource StringNotEmptyToVis}}">

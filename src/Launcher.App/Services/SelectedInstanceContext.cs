@@ -19,6 +19,10 @@ public interface ISelectedInstanceContext
     /// <summary>Optional tab the detail page should open on (consumed once). Used by the builder's
     /// "Изменение конфигов" node to jump straight to the Файлы tab of the built instance.</summary>
     InstanceDetailTab? InitialTab { get; set; }
+
+    /// <summary>A build the Конструктор сборок should open pre-selected (consumed once). Set when a
+    /// library card is clicked so it lands in the builder with that build already loaded for editing.</summary>
+    LauncherInstance? BuilderInstance { get; set; }
 }
 
 public sealed class SelectedInstanceContext : ISelectedInstanceContext
@@ -28,4 +32,6 @@ public sealed class SelectedInstanceContext : ISelectedInstanceContext
     public LauncherInstance? ProjectSearchScope { get; set; }
 
     public InstanceDetailTab? InitialTab { get; set; }
+
+    public LauncherInstance? BuilderInstance { get; set; }
 }

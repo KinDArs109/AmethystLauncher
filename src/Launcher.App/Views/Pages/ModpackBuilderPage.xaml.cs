@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Launcher.App.ViewModels;
 using Wpf.Ui.Abstractions.Controls;
 
@@ -18,6 +19,13 @@ public partial class ModpackBuilderPage : INavigableView<ModpackBuilderViewModel
     private const double DotBaseOpacity = 0.16;
     private const double DotBaseSize = 3.0;
 
+    // The orbit: four nodes revolve around the hub. A timer advances the angle; hovering the cluster
+    // pauses it so a node is easy to click.
+    private readonly DispatcherTimer _orbitTimer;
+    private double _orbitAngle;
+    private bool _autoRotate = true;
+    private const double OrbitRadius = 150;
+
     public ModpackBuilderViewModel ViewModel { get; }
 
     public ModpackBuilderPage(ModpackBuilderViewModel viewModel)
@@ -25,6 +33,16 @@ public partial class ModpackBuilderPage : INavigableView<ModpackBuilderViewModel
         ViewModel = viewModel;
         DataContext = this;
         InitializeComponent();
+
+        _orbitTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        _orbitTimer.Tick += (_, _) =>
+        {
+            if (_autoRotate)
+            {
+                _orbitAngle = (_orbitAngle + 0.25) % 360;
+                UpdateOrbit();
+            }
+        };
 
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
@@ -37,10 +55,42 @@ public partial class ModpackBuilderPage : INavigableView<ModpackBuilderViewModel
         // this page is up (restored on the way out).
         App.GetService<MainWindowViewModel>().IsRightPanelVisible = false;
         BuildDotField();
+        UpdateOrbit();
+        _orbitTimer.Start();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e) =>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        _orbitTimer.Stop();
         App.GetService<MainWindowViewModel>().IsRightPanelVisible = true;
+    }
+
+    private void OnOrbitMouseEnter(object sender, MouseEventArgs e) => _autoRotate = false;
+
+    private void OnOrbitMouseLeave(object sender, MouseEventArgs e) => _autoRotate = true;
+
+    /// <summary>Places each node on the circle at its base angle + the current rotation, and fades/orders
+    /// them front-to-back so the ring reads as a real orbit.</summary>
+    private void UpdateOrbit()
+    {
+        // Create top, Моды right, Играть bottom, Конфиги left.
+        PlaceNode(NodeCreate, TCreate, -90);
+        PlaceNode(NodeMods, TMods, 0);
+        PlaceNode(NodePlay, TPlay, 90);
+        PlaceNode(NodeConfigs, TConfigs, 180);
+    }
+
+    private void PlaceNode(UIElement node, TranslateTransform transform, double baseAngle)
+    {
+        var rad = (baseAngle + _orbitAngle) * Math.PI / 180.0;
+        transform.X = OrbitRadius * Math.Cos(rad);
+        transform.Y = OrbitRadius * Math.Sin(rad);
+
+        // Front of the orbit (bottom, sin > 0) is brighter and drawn on top.
+        var sin = Math.Sin(rad);
+        node.Opacity = 0.55 + 0.45 * ((1 + sin) / 2);
+        Panel.SetZIndex(node, 20 + (int)Math.Round(10 * sin));
+    }
 
     private void BuildDotField()
     {

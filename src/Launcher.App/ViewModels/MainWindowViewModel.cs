@@ -173,4 +173,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenAccount() => _navigationService.Navigate(typeof(AccountsPage));
+
+    /// <summary>The nav-rail "+" now opens the Конструктор сборок (fresh, create mode) instead of the
+    /// old create-instance dialog — the builder is the single place to make and manage builds.</summary>
+    [RelayCommand]
+    private void OpenBuilder() => _navigationService.Navigate(typeof(ModpackBuilderPage));
 }

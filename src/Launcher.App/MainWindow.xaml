@@ -96,8 +96,8 @@
                     Margin="0,10,0,10"
                     HorizontalAlignment="Center"
                     Style="{StaticResource LauncherCreateRotateButtonStyle}"
-                    ToolTip="Создать сборку"
-                    Command="{Binding ViewModel.OpenCreateInstanceCommand}" />
+                    ToolTip="Конструктор сборок"
+                    Command="{Binding ViewModel.OpenBuilderCommand}" />
             </ui:NavigationView.PaneHeader>
 
             <ui:NavigationView.MenuItems>

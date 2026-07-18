@@ -111,11 +111,23 @@ public partial class ModpackBuilderViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBuildPickerOpen;
 
+    /// <summary>Whether the action panel is slid out. Starts closed so the orbit sits centred; clicking a
+    /// node opens it.</summary>
+    [ObservableProperty]
+    private bool _isPanelOpen;
+
     /// <summary>A build passed in from a library click, applied once the instance list has loaded.</summary>
     private string? _pendingBuilderPath;
 
     [RelayCommand]
-    private void SelectNode(BuilderNode node) => ActiveNode = node;
+    private void SelectNode(BuilderNode node)
+    {
+        ActiveNode = node;
+        IsPanelOpen = true;
+    }
+
+    [RelayCommand]
+    private void ClosePanel() => IsPanelOpen = false;
 
     partial void OnActiveNodeChanged(BuilderNode value)
     {
@@ -145,6 +157,7 @@ public partial class ModpackBuilderViewModel : ObservableObject
         IsEditMode = true;
         SelectedEditInstance = instance;
         ActiveNode = BuilderNode.Mods;
+        IsPanelOpen = true;
     }
 
     public IReadOnlyList<ModLoaderType> LoaderTypes { get; } =
@@ -295,6 +308,7 @@ public partial class ModpackBuilderViewModel : ObservableObject
                     IsEditMode = true;
                     SelectedEditInstance = match;
                     ActiveNode = BuilderNode.Mods;
+                    IsPanelOpen = true;
                 }
             }
         }

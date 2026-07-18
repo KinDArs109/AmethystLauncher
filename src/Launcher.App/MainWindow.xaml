@@ -42,24 +42,20 @@
             <Ellipse Canvas.Right="120" Canvas.Top="-360" Width="620" Height="620" Fill="{StaticResource LauncherAmbientBlueBrush}" />
         </Canvas>
 
-        <!-- Top bar: logo mark (aligned with the nav rail's width below it) + the draggable titlebar. -->
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="72" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <Image
-                Grid.Column="0"
-                Width="36" Height="36"
-                Margin="0,6"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                RenderOptions.BitmapScalingMode="HighQuality"
-                Source="pack://application:,,,/Assets/logo.png" />
-
-            <ui:TitleBar Grid.Column="1" Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}" />
-        </Grid>
+        <!-- Top bar: the logo + name sit in the titlebar's header, snug against the left edge; the
+             titlebar itself provides window drag + caption buttons. -->
+        <ui:TitleBar Grid.Row="0" Title="">
+            <ui:TitleBar.Header>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Image Width="30" Height="30"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Source="pack://application:,,,/Assets/logo.png" />
+                    <TextBlock Text="Amethyst Launcher"
+                               Foreground="White" FontWeight="SemiBold" FontSize="14"
+                               VerticalAlignment="Center" Margin="9,0,0,0" />
+                </StackPanel>
+            </ui:TitleBar.Header>
+        </ui:TitleBar>
 
         <!-- Body: nav rail + a fixed-width right column, side by side — the right column is a real
              layout column (not a floating overlay), exactly like the nav rail on the left. -->

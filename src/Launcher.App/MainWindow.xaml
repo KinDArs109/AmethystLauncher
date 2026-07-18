@@ -1,0 +1,525 @@
+<ui:FluentWindow x:Class="Launcher.App.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:pages="clr-namespace:Launcher.App.Views.Pages"
+                 xmlns:services="clr-namespace:Launcher.App.Services"
+                 xmlns:converters="clr-namespace:Launcher.App.Converters"
+                 Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
+                 Width="1280" Height="800"
+                 MinWidth="960" MinHeight="600"
+                 Background="{StaticResource LauncherBackgroundBrush}"
+                 Icon="pack://application:,,,/Assets/logo.png"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterScreen">
+
+    <ui:FluentWindow.Resources>
+        <converters:BytesToMegabytesConverter x:Key="BytesToMb" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis" />
+        <converters:NonZeroCountToVisibilityConverter x:Key="NonZeroCountToVis" />
+        <converters:ZeroCountToVisibilityConverter x:Key="ZeroCountToVis" />
+    </ui:FluentWindow.Resources>
+
+    <Grid Background="{StaticResource LauncherBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--
+            Ambient background — soft colour blobs bleeding in from the corners so the window never
+            reads as a flat fill. Spans both rows, sits behind everything, and is non-interactive.
+            The blur is baked into the radial brushes; an extra BlurEffect would be far too costly at
+            this size, so we rely on the gradient falloff instead.
+        -->
+        <Canvas Grid.Row="0" Grid.RowSpan="2" ClipToBounds="True" IsHitTestVisible="False">
+            <Ellipse Canvas.Left="-260" Canvas.Top="-220" Width="720" Height="720" Fill="{StaticResource LauncherAmbientVioletBrush}" />
+            <Ellipse Canvas.Right="-300" Canvas.Bottom="-260" Width="760" Height="760" Fill="{StaticResource LauncherAmbientRoseBrush}" />
+            <Ellipse Canvas.Right="120" Canvas.Top="-360" Width="620" Height="620" Fill="{StaticResource LauncherAmbientBlueBrush}" />
+        </Canvas>
+
+        <!-- Top bar: logo mark (aligned with the nav rail's width below it) + the draggable titlebar. -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="72" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Image
+                Grid.Column="0"
+                Width="36" Height="36"
+                Margin="0,6"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RenderOptions.BitmapScalingMode="HighQuality"
+                Source="pack://application:,,,/Assets/logo.png" />
+
+            <ui:TitleBar Grid.Column="1" Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}" />
+        </Grid>
+
+        <!-- Body: nav rail + a fixed-width right column, side by side — the right column is a real
+             layout column (not a floating overlay), exactly like the nav rail on the left. -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="288" />
+            </Grid.ColumnDefinitions>
+
+        <ui:NavigationView
+            x:Name="RootNavigation"
+            Grid.Column="0"
+            Background="Transparent"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleVisible="False"
+            IsPaneOpen="False"
+            CompactPaneLength="72"
+            OpenPaneLength="72"
+            PaneDisplayMode="Left">
+
+            <ui:NavigationView.Resources>
+                <!-- Breathing room between the icon-only nav items — otherwise they read as one solid block. -->
+                <Style TargetType="ui:NavigationViewItem" BasedOn="{StaticResource {x:Type ui:NavigationViewItem}}">
+                    <Setter Property="Margin" Value="0,4" />
+                </Style>
+            </ui:NavigationView.Resources>
+
+            <!-- Create-instance sits at the top of the rail, in the slot the logo vacated when it moved
+                 to the top titlebar — left side, not a second copy on the right. -->
+            <ui:NavigationView.PaneHeader>
+                <Button
+                    Margin="0,10,0,10"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource LauncherCreateRotateButtonStyle}"
+                    ToolTip="Создать сборку"
+                    Command="{Binding ViewModel.OpenCreateInstanceCommand}" />
+            </ui:NavigationView.PaneHeader>
+
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="Главная" TargetPageType="{x:Type pages:HomePage}" ToolTip="Главная">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Home24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Библиотека" TargetPageType="{x:Type pages:LibraryPage}" ToolTip="Библиотека">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="PlayCircle24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Поиск проектов" TargetPageType="{x:Type pages:ModsPage}" ToolTip="Поиск проектов">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="BoxMultiple24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Конструктор сборок" TargetPageType="{x:Type pages:ModpackBuilderPage}" ToolTip="Конструктор сборок">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Wrench24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Новости" TargetPageType="{x:Type pages:NewsPage}" ToolTip="Новости">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="News24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Поддержка" TargetPageType="{x:Type pages:SupportPage}" ToolTip="Поддержка">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="ChatMultiple24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.MenuItems>
+
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Настройки" TargetPageType="{x:Type pages:SettingsPage}" ToolTip="Настройки">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
+
+            <ui:NavigationView.ContentOverlay>
+                <!-- Background download toasts — float over whichever page is active in this column only,
+                     like Modrinth App's corner notification. Transient, so an overlay is the right fit
+                     here (unlike the account/friends/news column, which stays put). -->
+                <ItemsControl
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,16,16"
+                    Panel.ZIndex="1000"
+                    ItemsSource="{Binding ViewModel.DownloadCenter.Downloads}"
+                    IsHitTestVisible="True">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type services:ActiveDownload}">
+                        <Border
+                            Width="300"
+                            CornerRadius="10"
+                            Background="{StaticResource LauncherSurfaceBrush}"
+                            BorderBrush="{StaticResource LauncherHairlineBrush}"
+                            BorderThickness="1"
+                            Padding="14"
+                            Margin="0,10,0,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock
+                                            Text="{Binding Status}"
+                                            FontSize="11"
+                                            TextWrapping="Wrap"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                    </StackPanel>
+                                    <ui:Button
+                                        Grid.Column="1"
+                                        Appearance="Transparent"
+                                        Padding="4"
+                                        Icon="{ui:SymbolIcon Dismiss24}"
+                                        Command="{Binding ViewModel.DismissDownloadCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}" />
+                                </Grid>
+                                <ProgressBar
+                                    Maximum="{Binding TotalBytes}"
+                                    Value="{Binding DownloadedBytes}"
+                                    Height="4"
+                                    Margin="0,0,0,6" />
+                                <TextBlock FontSize="11" Foreground="{StaticResource LauncherMutedForegroundBrush}">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0:F1} МБ / {1:F1} МБ">
+                                            <Binding Path="DownloadedBytes" Converter="{StaticResource BytesToMb}" />
+                                            <Binding Path="TotalBytes" Converter="{StaticResource BytesToMb}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ui:NavigationView.ContentOverlay>
+        </ui:NavigationView>
+
+        <!-- Right column: docked, always-visible — the same "own layout region" treatment as the nav
+             rail, not an overlay that can slide over page content (see MainWindow revision history:
+             a floating version of this collided with the Library page's toolbar). -->
+        <Border Grid.Column="1" Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                    <!-- The whole card is one click target (opens Аккаунты), so it gets the animated
+                         card style — unlike the informational Друзья/Новости cards below. -->
+                    <Border Grid.Row="0"
+                        Margin="0,0,0,10"
+                        Style="{StaticResource LauncherGlassCardStyle}"
+                        Cursor="Hand">
+                        <Button
+                            Padding="10,8"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Command="{Binding ViewModel.OpenAccountCommand}"
+                            ToolTip="{Binding ViewModel.AccountDisplayName}">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8" />
+                                </Style>
+                            </Button.Resources>
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource LauncherSurfaceHoverBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal">
+                                <Border
+                                    Width="28" Height="28"
+                                    CornerRadius="14"
+                                    Background="{StaticResource LauncherAccentGradientBrush}">
+                                    <TextBlock
+                                        Text="{Binding ViewModel.AccountInitial}"
+                                        FontWeight="Bold"
+                                        FontSize="12"
+                                        Foreground="White"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock
+                                        Text="Играете как"
+                                        FontSize="10"
+                                        Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                    <TextBlock
+                                        Text="{Binding ViewModel.AccountDisplayName}"
+                                        FontSize="12.5"
+                                        FontWeight="Medium"
+                                        TextTrimming="CharacterEllipsis"
+                                        MaxWidth="140" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                <Border Grid.Row="1" Style="{StaticResource LauncherGlassStaticCardStyle}" Padding="14" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Друзья" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                            <ui:Button
+                                HorizontalAlignment="Right"
+                                Appearance="Transparent"
+                                Padding="2"
+                                ToolTip="Обновить"
+                                Icon="{ui:SymbolIcon ArrowSync24}"
+                                Command="{Binding ViewModel.Friends.RefreshCommand}" />
+                        </Grid>
+
+                        <TextBlock
+                            Text="Войдите в аккаунт, чтобы добавлять друзей."
+                            FontSize="12"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            Visibility="{Binding ViewModel.Friends.IsSignedIn, Converter={StaticResource InverseBoolToVis}}" />
+
+                        <StackPanel Visibility="{Binding ViewModel.Friends.IsSignedIn, Converter={StaticResource BoolToVis}}">
+                            <!-- Add friend by nickname -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox
+                                    Grid.Column="0"
+                                    Text="{Binding ViewModel.Friends.AddFriendText, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="Ник игрока..."
+                                    FontSize="12" />
+                                <ui:Button
+                                    Grid.Column="2"
+                                    Appearance="Primary"
+                                    Padding="8,6"
+                                    ToolTip="Отправить заявку в друзья"
+                                    Icon="{ui:SymbolIcon PersonAdd24}"
+                                    Command="{Binding ViewModel.Friends.AddFriendCommand}" />
+                            </Grid>
+
+                            <TextBlock
+                                Text="{Binding ViewModel.Friends.StatusText}"
+                                FontSize="11"
+                                TextWrapping="Wrap"
+                                Margin="0,0,0,6"
+                                Foreground="{StaticResource LauncherAccentSoftBrush}"
+                                Visibility="{Binding ViewModel.Friends.StatusText, Converter={StaticResource StringNotEmptyToVis}}" />
+
+                            <!-- Incoming requests -->
+                            <StackPanel Visibility="{Binding ViewModel.Friends.Requests.Count, Converter={StaticResource NonZeroCountToVis}}">
+                                <TextBlock
+                                    Text="Заявки в друзья"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                    Margin="0,2,0,4" />
+                                <ItemsControl ItemsSource="{Binding ViewModel.Friends.Requests}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="4" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    Text="{Binding Requester}"
+                                                    FontSize="12"
+                                                    VerticalAlignment="Center"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <ui:Button
+                                                    Grid.Column="1"
+                                                    Appearance="Primary"
+                                                    Padding="4"
+                                                    ToolTip="Принять"
+                                                    Icon="{ui:SymbolIcon Checkmark24}"
+                                                    Command="{Binding ViewModel.Friends.AcceptRequestCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                                <ui:Button
+                                                    Grid.Column="3"
+                                                    Appearance="Secondary"
+                                                    Padding="4"
+                                                    ToolTip="Отклонить"
+                                                    Icon="{ui:SymbolIcon Dismiss24}"
+                                                    Command="{Binding ViewModel.Friends.DeclineRequestCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <!-- Friend list with presence -->
+                            <TextBlock
+                                Text="Добавьте друзей и следите за ними!"
+                                FontSize="12"
+                                TextWrapping="Wrap"
+                                Foreground="{StaticResource LauncherSuccessBrush}"
+                                Visibility="{Binding ViewModel.Friends.Friends.Count, Converter={StaticResource ZeroCountToVis}}" />
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                                <ItemsControl ItemsSource="{Binding ViewModel.Friends.Friends}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Grid Grid.Column="0" VerticalAlignment="Center">
+                                                    <Border
+                                                        Width="26" Height="26"
+                                                        CornerRadius="13"
+                                                        Background="{StaticResource LauncherSurfaceMutedBrush}">
+                                                        <TextBlock
+                                                            Text="{Binding Initial}"
+                                                            FontWeight="Bold"
+                                                            FontSize="11"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <!-- Online dot -->
+                                                    <Ellipse
+                                                        Width="8" Height="8"
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Bottom"
+                                                        Fill="{StaticResource LauncherSuccessBrush}"
+                                                        Visibility="{Binding IsOnline, Converter={StaticResource BoolToVis}}" />
+                                                </Grid>
+
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                    <TextBlock
+                                                        Text="{Binding Username}"
+                                                        FontSize="12"
+                                                        FontWeight="Medium"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock
+                                                        Text="{Binding StatusText}"
+                                                        FontSize="10.5"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                                </StackPanel>
+
+                                                <ui:Button
+                                                    Grid.Column="3"
+                                                    Appearance="Transparent"
+                                                    Padding="2"
+                                                    ToolTip="Удалить из друзей"
+                                                    Icon="{ui:SymbolIcon PersonDelete24}"
+                                                    Command="{Binding ViewModel.Friends.RemoveFriendCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Новости stretches to fill whatever height is left so the column always reaches the
+                     bottom of the window; the ad slot below is pinned to the bottom edge. -->
+                <Border Grid.Row="2" Style="{StaticResource LauncherGlassStaticCardStyle}" Padding="14" Margin="0,0,0,10" VerticalAlignment="Stretch">
+                    <StackPanel>
+                        <TextBlock Text="Новости" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6" />
+                        <TextBlock
+                            Text="Пока нет объявлений."
+                            FontSize="12"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            Visibility="{Binding ViewModel.LatestNews.Count, Converter={StaticResource ZeroCountToVis}}" />
+                        <ItemsControl ItemsSource="{Binding ViewModel.LatestNews}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,10">
+                                        <TextBlock
+                                            Text="{Binding Title}"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            Text="{Binding Body}"
+                                            FontSize="11.5"
+                                            TextWrapping="Wrap"
+                                            MaxHeight="48"
+                                            TextTrimming="CharacterEllipsis"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                            Margin="0,2,0,0" />
+                                        <TextBlock
+                                            Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}"
+                                            FontSize="10"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                            Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Explicit, honest placeholder — no real ad network wired in, so this never pretends
+                     to be a live ad slot. -->
+                <Border
+                    Grid.Row="3"
+                    CornerRadius="12"
+                    Background="{StaticResource LauncherSurfaceMutedBrush}"
+                    BorderBrush="{StaticResource LauncherHairlineBrush}"
+                    BorderThickness="1"
+                    Padding="14"
+                    MinHeight="90">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon
+                            Symbol="ImageAdd24"
+                            FontSize="22"
+                            HorizontalAlignment="Center"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            Margin="0,0,0,6" />
+                        <TextBlock
+                            Text="Место для рекламы"
+                            FontSize="12"
+                            HorizontalAlignment="Center"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Snackbar/dialog host spans both columns so dialogs centre over the whole window, not just
+             the nav+frame area. IsHitTestVisible must NOT be set false here — WPF excludes the whole
+             subtree from hit-testing when a parent has it false, which silently ate every click on the
+             dialog's own buttons (Background="{x:Null}" already keeps empty areas of this Grid from
+             blocking clicks to whatever's behind them, so nothing extra is needed for that). -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="2">
+            <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+            <ui:ContentDialogHost x:Name="RootContentDialog" />
+        </Grid>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

@@ -1,0 +1,67 @@
+<Window x:Class="Launcher.App.Views.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True"
+        Topmost="True"
+        Width="440" Height="260"
+        Title="Amethyst Launcher">
+
+    <Border CornerRadius="18" BorderThickness="1">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#1B1430" Offset="0" />
+                <GradientStop Color="#120C22" Offset="1" />
+            </LinearGradientBrush>
+        </Border.Background>
+        <Border.BorderBrush>
+            <SolidColorBrush Color="#3A2E57" />
+        </Border.BorderBrush>
+
+        <Grid Margin="32,30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                <Image Width="56" Height="56"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Source="pack://application:,,,/Assets/logo.png" />
+                <StackPanel VerticalAlignment="Center" Margin="16,0,0,0">
+                    <TextBlock Text="Amethyst" FontSize="24" FontWeight="Bold" Foreground="White" />
+                    <TextBlock Text="Launcher" FontSize="16" FontWeight="SemiBold" Foreground="#B9A6E6" Margin="0,-2,0,0" />
+                </StackPanel>
+            </StackPanel>
+
+            <ui:ProgressRing Grid.Row="1"
+                             x:Name="Spinner"
+                             IsIndeterminate="True"
+                             Width="34" Height="34"
+                             Foreground="#9F67F5"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center" />
+
+            <StackPanel Grid.Row="2">
+                <TextBlock x:Name="StatusText"
+                           Text="Запуск..."
+                           Foreground="#C9BEE4"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,10" />
+                <ProgressBar x:Name="Progress"
+                             Height="5"
+                             IsIndeterminate="True"
+                             Background="#2A2140"
+                             Foreground="#8B5CF6"
+                             BorderThickness="0" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Elevation scale — a shared DropShadowEffect instance is safe to reuse across many elements
+        (Effect is a Freezable, same as Brush), so every card/dialog uses one of these instead of
+        a one-off shadow tuned by eye.
+    -->
+    <DropShadowEffect x:Key="LauncherElevation1"
+                       Color="#000000" Direction="270" ShadowDepth="2"
+                       BlurRadius="10" Opacity="0.25" />
+    <DropShadowEffect x:Key="LauncherElevation2"
+                       Color="#000000" Direction="270" ShadowDepth="4"
+                       BlurRadius="18" Opacity="0.32" />
+    <DropShadowEffect x:Key="LauncherElevation3"
+                       Color="#000000" Direction="270" ShadowDepth="8"
+                       BlurRadius="32" Opacity="0.4" />
+
+    <!-- Accent-tinted glow for hovered/focused interactive surfaces (buttons, active nav item). -->
+    <DropShadowEffect x:Key="LauncherAccentGlow"
+                       Color="#7C3AED" Direction="270" ShadowDepth="0"
+                       BlurRadius="20" Opacity="0.55" />
+    <DropShadowEffect x:Key="LauncherAccentGlowStrong"
+                       Color="#8B5CF6" Direction="270" ShadowDepth="0"
+                       BlurRadius="28" Opacity="0.7" />
+
+    <!--
+        Shared easing tokens, matching the motion.dev vocabulary: spring-like BackEase for
+        entrances/hover (a little overshoot reads as "alive"), plain CubicEase for exits (snappier,
+        no overshoot back out).
+    -->
+    <BackEase x:Key="LauncherEaseSpring" EasingMode="EaseOut" Amplitude="0.4" />
+    <CubicEase x:Key="LauncherEaseOut" EasingMode="EaseOut" />
+    <CubicEase x:Key="LauncherEaseIn" EasingMode="EaseIn" />
+    <CubicEase x:Key="LauncherEaseInOut" EasingMode="EaseInOut" />
+
+</ResourceDictionary>

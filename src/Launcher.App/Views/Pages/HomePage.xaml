@@ -1,0 +1,257 @@
+<Page x:Class="Launcher.App.Views.Pages.HomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:viewModels="clr-namespace:Launcher.App.ViewModels"
+      xmlns:converters="clr-namespace:Launcher.App.Converters"
+      xmlns:behaviors="clr-namespace:Launcher.App.Behaviors"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:HomeViewModel}"
+      d:DesignWidth="1000" d:DesignHeight="700"
+      Title="HomePage"
+      Opacity="0"
+      RenderTransformOrigin="0.5,0.5">
+
+    <Page.RenderTransform>
+        <TranslateTransform Y="14" />
+    </Page.RenderTransform>
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource PageEnterStoryboard}" />
+        </EventTrigger>
+    </Page.Triggers>
+
+    <Page.Resources>
+        <converters:NonZeroCountToVisibilityConverter x:Key="NonZeroCountToVis" />
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis" />
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:ScrollViewerWindowHeightBehavior.Enabled="True">
+        <StackPanel Margin="40,32,40,32">
+
+            <!-- Hero -->
+            <Border
+                CornerRadius="{StaticResource LauncherRadiusLg}"
+                Background="{StaticResource LauncherHeroBrush}"
+                BorderBrush="{StaticResource LauncherGlassBorderBrush}"
+                BorderThickness="1"
+                Effect="{StaticResource LauncherElevation2}"
+                Padding="32"
+                Margin="0,0,0,28">
+                <Grid>
+                    <Border
+                        Width="360" Height="360"
+                        CornerRadius="180"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,-140,-140,0"
+                        Background="{StaticResource LauncherGlowBrush}"
+                        IsHitTestVisible="False" />
+                    <StackPanel>
+                        <TextBlock
+                            Text="MC LAUNCHER"
+                            FontSize="13" FontWeight="Bold"
+                            Foreground="{StaticResource LauncherAccentSoftBrush}"
+                            Margin="0,0,0,8" />
+                        <TextBlock
+                            Text="Свой лаунчер Minecraft — без компромиссов"
+                            FontSize="30" FontWeight="SemiBold"
+                            TextWrapping="Wrap"
+                            Margin="0,0,0,10" />
+                        <TextBlock
+                            Text="Оригинальный аккаунт или никнейм, сборки из Modrinth и CurseForge, и всё это — в одном месте."
+                            FontSize="14"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            TextWrapping="Wrap"
+                            MaxWidth="560"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,8" />
+                        <ui:Button
+                            Content="Играть"
+                            Style="{StaticResource LauncherGlowButtonStyle}"
+                            Icon="{ui:SymbolIcon PlayCircle24}"
+                            Command="{Binding ViewModel.GoToPlayCommand}"
+                            HorizontalAlignment="Left"
+                            Margin="0,10,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Jump back in -->
+            <StackPanel Margin="0,0,0,28" Visibility="{Binding ViewModel.RecentWorlds.Count, Converter={StaticResource NonZeroCountToVis}}">
+                <TextBlock Text="Продолжить" FontSize="16" FontWeight="SemiBold" Margin="4,0,0,12" />
+                <ItemsControl ItemsSource="{Binding ViewModel.RecentWorlds}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:RecentWorldItem}">
+                            <Border Style="{StaticResource LauncherGlassCardStyle}" Width="220" Padding="16" Margin="0,0,16,0">
+                                <StackPanel>
+                                    <ui:SymbolIcon
+                                        Symbol="Globe24"
+                                        FontSize="20"
+                                        Foreground="{StaticResource LauncherAccentSoftBrush}"
+                                        Margin="0,0,0,12" />
+                                    <TextBlock Text="{Binding WorldName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Text="{Binding Instance.Name}"
+                                        FontSize="12"
+                                        Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Margin="0,2,0,14" />
+                                    <ui:Button
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding ViewModel.PlayWorldCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                        <ui:Button.Style>
+                                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                <Setter Property="Content" Value="Играть" />
+                                                <Setter Property="Appearance" Value="Primary" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLaunching}" Value="True">
+                                                        <Setter Property="Content" Value="Запуск..." />
+                                                        <Setter Property="IsEnabled" Value="False" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:Button.Style>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock
+                    Text="{Binding ViewModel.StatusText}"
+                    FontSize="12"
+                    Margin="4,10,0,0"
+                    Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                    Visibility="{Binding ViewModel.StatusText, Converter={StaticResource StringNotEmptyToVis}}" />
+            </StackPanel>
+
+            <!-- Quick actions -->
+            <TextBlock Text="Быстрые действия" FontSize="16" FontWeight="SemiBold" Margin="4,0,0,12" />
+            <UniformGrid Columns="3" Rows="1">
+                <ui:CardAction
+                    Margin="0,0,12,0"
+                    Command="{Binding ViewModel.GoToPlayCommand}"
+                    Icon="{ui:SymbolIcon PlayCircle24}">
+                    <StackPanel>
+                        <TextBlock Text="Играть" FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="Выбрать версию и запустить"
+                            FontSize="12"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </ui:CardAction>
+
+                <ui:CardAction
+                    Margin="6,0,6,0"
+                    Command="{Binding ViewModel.GoToModsCommand}"
+                    Icon="{ui:SymbolIcon BoxMultiple24}">
+                    <StackPanel>
+                        <TextBlock Text="Поиск проектов" FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="Моды, сборки, ресурспаки и шейдеры"
+                            FontSize="12"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </ui:CardAction>
+
+                <ui:CardAction
+                    Margin="12,0,0,0"
+                    Command="{Binding ViewModel.GoToNewsCommand}"
+                    Icon="{ui:SymbolIcon News24}">
+                    <StackPanel>
+                        <TextBlock Text="Новости" FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="Объявления от команды"
+                            FontSize="12"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </ui:CardAction>
+            </UniformGrid>
+
+            <!-- At a glance — compact icon-chip + value rows (horizontal so tiles don't leave dead vertical space). -->
+            <TextBlock Text="Обзор" FontSize="16" FontWeight="SemiBold" Margin="4,28,0,12" />
+            <UniformGrid Columns="4" Rows="1">
+                <Border Style="{StaticResource LauncherGlassCardStyle}" Margin="0,0,12,0" Padding="16,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="{StaticResource LauncherRadiusMd}" Background="{StaticResource LauncherSurfaceMutedBrush}" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="CubeMultiple24" FontSize="20" Foreground="{StaticResource LauncherAccentSoftBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ViewModel.InstanceCount}" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="Сборок" FontSize="12" Foreground="{StaticResource LauncherMutedForegroundBrush}" Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource LauncherGlassCardStyle}" Margin="4,0,8,0" Padding="16,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="{StaticResource LauncherRadiusMd}" Background="{StaticResource LauncherSurfaceMutedBrush}" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="BoxMultiple24" FontSize="20" Foreground="{StaticResource LauncherAccentSoftBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ViewModel.InstalledContentCount}" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="Контента" FontSize="12" Foreground="{StaticResource LauncherMutedForegroundBrush}" Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource LauncherGlassCardStyle}" Margin="8,0,4,0" Padding="16,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="{StaticResource LauncherRadiusMd}" Background="{StaticResource LauncherSurfaceMutedBrush}" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Globe24" FontSize="20" Foreground="{StaticResource LauncherAccentSoftBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ViewModel.WorldCount}" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="Миров" FontSize="12" Foreground="{StaticResource LauncherMutedForegroundBrush}" Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource LauncherGlassCardStyle}" Margin="12,0,0,0" Padding="16,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="{StaticResource LauncherRadiusMd}" Background="{StaticResource LauncherSurfaceMutedBrush}" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="History24" FontSize="20" Foreground="{StaticResource LauncherAccentSoftBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock
+                                Text="{Binding ViewModel.LastPlayedSummary}"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="Последний запуск" FontSize="12" Foreground="{StaticResource LauncherMutedForegroundBrush}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </UniformGrid>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

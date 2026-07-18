@@ -1,0 +1,718 @@
+<Page x:Class="Launcher.App.Views.Pages.InstanceDetailPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:viewModels="clr-namespace:Launcher.App.ViewModels"
+      xmlns:converters="clr-namespace:Launcher.App.Converters"
+      xmlns:services="clr-namespace:Launcher.App.Services"
+      xmlns:modSources="clr-namespace:Launcher.ModSources;assembly=Launcher.ModSources"
+      xmlns:behaviors="clr-namespace:Launcher.App.Behaviors"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:InstanceDetailViewModel}"
+      d:DesignWidth="1100" d:DesignHeight="750"
+      Title="InstanceDetailPage"
+      Opacity="0"
+      RenderTransformOrigin="0.5,0.5">
+
+    <Page.RenderTransform>
+        <TranslateTransform Y="14" />
+    </Page.RenderTransform>
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource PageEnterStoryboard}" />
+        </EventTrigger>
+    </Page.Triggers>
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
+        <converters:ZeroCountToVisibilityConverter x:Key="ZeroCountToVis" />
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis" />
+        <converters:LastPlayedTextConverter x:Key="LastPlayedText" />
+        <converters:LogFilterRadioConverter x:Key="LogFilterConverter" />
+        <converters:InstanceDetailTabVisibilityConverter x:Key="TabVisible" />
+
+        <Style x:Key="TabButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="Appearance" Value="Secondary" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
+        <Style x:Key="ContentFilterPillStyle" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="Appearance" Value="Secondary" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:ScrollViewerWindowHeightBehavior.Enabled="True">
+        <Grid Margin="40,24,40,32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ui:Button
+                Grid.Row="0"
+                Content="← Библиотека"
+                Appearance="Transparent"
+                Padding="0"
+                HorizontalAlignment="Left"
+                Margin="0,0,0,16"
+                Command="{Binding ViewModel.GoBackCommand}" />
+
+            <!-- Header -->
+            <Grid Grid.Row="1" Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="56" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    Width="56" Height="56"
+                    CornerRadius="12"
+                    Background="{StaticResource LauncherSurfaceMutedBrush}">
+                    <ui:SymbolIcon
+                        Symbol="CubeMultiple24"
+                        FontSize="24"
+                        Foreground="{StaticResource LauncherAccentSoftBrush}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ViewModel.Instance.Name}" FontSize="22" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Text="{Binding ViewModel.Instance.LoaderType}"
+                            FontSize="13"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                        <TextBlock
+                            Text=" • "
+                            FontSize="13"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                        <TextBlock
+                            Text="{Binding ViewModel.Instance.LastPlayedAt, Converter={StaticResource LastPlayedText}}"
+                            FontSize="13"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <ui:Button
+                    Grid.Column="3"
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"
+                    Appearance="Primary"
+                    Command="{Binding ViewModel.PlayCommand}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource LauncherGlowButtonStyle}">
+                            <Setter Property="Content" Value="Играть" />
+                            <Setter Property="Icon" Value="{ui:SymbolIcon PlayCircle24}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ViewModel.IsBusy}" Value="True">
+                                    <Setter Property="Content" Value="Подготовка..." />
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ViewModel.IsRunning}" Value="True">
+                                    <Setter Property="Content" Value="Запущено" />
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                </ui:Button>
+
+                <ui:Button
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    Appearance="Secondary"
+                    Icon="{ui:SymbolIcon MoreHorizontal24}"
+                    ToolTip="Ещё"
+                    Click="MoreButton_Click">
+                    <ui:Button.ContextMenu>
+                        <ContextMenu Placement="Bottom">
+                            <MenuItem Header="Переименовать" Command="{Binding ViewModel.RenameCommand}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="Edit24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Клонировать" Command="{Binding ViewModel.CloneCommand}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="Copy24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Открыть папку" Command="{Binding ViewModel.OpenFolderCommand}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem
+                                Header="Удалить сборку"
+                                Foreground="{StaticResource LauncherDangerBrush}"
+                                Command="{Binding ViewModel.DeleteInstanceCommand}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="Delete24" Foreground="{StaticResource LauncherDangerBrush}" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </ui:Button.ContextMenu>
+                </ui:Button>
+            </Grid>
+
+            <TextBlock
+                Grid.Row="1"
+                Text="{Binding ViewModel.StatusText}"
+                FontSize="12"
+                TextWrapping="Wrap"
+                Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Margin="72,0,0,-20"
+                Visibility="{Binding ViewModel.StatusText, Converter={StaticResource StringNotEmptyToVis}}" />
+
+            <Border
+                Grid.Row="2"
+                Height="1"
+                Background="{StaticResource LauncherHairlineBrush}"
+                Margin="0,24,0,0" />
+
+            <!-- Tab bar -->
+            <Grid Grid.Row="3" Margin="0,20,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <ui:Button Content="Content" Command="{Binding ViewModel.ShowContentTabCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource TabButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.SelectedTab}" Value="Content">
+                                        <Setter Property="Appearance" Value="Primary" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <ui:Button Content="Files" Command="{Binding ViewModel.ShowFilesTabCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource TabButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.SelectedTab}" Value="Files">
+                                        <Setter Property="Appearance" Value="Primary" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <ui:Button Content="Worlds" Command="{Binding ViewModel.ShowWorldsTabCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource TabButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.SelectedTab}" Value="Worlds">
+                                        <Setter Property="Appearance" Value="Primary" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <ui:Button Content="Logs" Command="{Binding ViewModel.ShowLogsTabCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource TabButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.SelectedTab}" Value="Logs">
+                                        <Setter Property="Appearance" Value="Primary" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                </StackPanel>
+
+                <!-- Settings live in their own popup instead of a tab — a per-instance config form
+                     doesn't need to share the tab strip with content you browse. -->
+                <ui:Button
+                    Grid.Column="1"
+                    Appearance="Secondary"
+                    Icon="{ui:SymbolIcon Settings24}"
+                    ToolTip="Настройки сборки"
+                    Command="{Binding ViewModel.OpenSettingsDialogCommand}" />
+            </Grid>
+
+            <!-- Tab content -->
+            <Grid Grid.Row="4">
+
+                <!-- ==================== Content tab ==================== -->
+                <StackPanel Visibility="{Binding ViewModel.SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Content}">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        Margin="0,60,0,0"
+                        Visibility="{Binding ViewModel.ContentTab.SupportsMods, Converter={StaticResource InverseBoolToVis}}">
+                        <TextBlock
+                            Text="Эта сборка без загрузчика модов — моды недоступны."
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding ViewModel.ContentTab.SupportsMods, Converter={StaticResource BoolToVis}}">
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox
+                                Grid.Column="0"
+                                Text="{Binding ViewModel.ContentTab.FilterText, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="Поиск среди установленного..."
+                                Icon="{ui:SymbolIcon Search24}"
+                                Margin="0,0,8,0" />
+                            <ui:Button
+                                Grid.Column="1"
+                                Content="Найти проекты"
+                                Appearance="Secondary"
+                                Icon="{ui:SymbolIcon BoxMultiple24}"
+                                ToolTip="Открыть «Поиск проектов», отфильтрованный под эту сборку"
+                                Command="{Binding ViewModel.FindProjectsCommand}" />
+                        </Grid>
+
+                        <!-- Content-type filter chips -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <ui:Button Content="Всё" Command="{Binding ViewModel.ContentTab.SelectTypeFilterCommand}" CommandParameter="{Binding ViewModel.ContentTab.TypeFilters[0]}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource ContentFilterPillStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SelectedTypeFilter.Key}" Value="">
+                                                <Setter Property="Appearance" Value="Primary" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button Content="Моды" Command="{Binding ViewModel.ContentTab.SelectTypeFilterCommand}" CommandParameter="{Binding ViewModel.ContentTab.TypeFilters[1]}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource ContentFilterPillStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SelectedTypeFilter.Key}" Value="mod">
+                                                <Setter Property="Appearance" Value="Primary" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button Content="Наборы ресурсов" Command="{Binding ViewModel.ContentTab.SelectTypeFilterCommand}" CommandParameter="{Binding ViewModel.ContentTab.TypeFilters[2]}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource ContentFilterPillStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SelectedTypeFilter.Key}" Value="resourcepack">
+                                                <Setter Property="Appearance" Value="Primary" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button Content="Шейдеры" Command="{Binding ViewModel.ContentTab.SelectTypeFilterCommand}" CommandParameter="{Binding ViewModel.ContentTab.TypeFilters[3]}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource ContentFilterPillStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SelectedTypeFilter.Key}" Value="shader">
+                                                <Setter Property="Appearance" Value="Primary" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button Content="Наборы данных" Command="{Binding ViewModel.ContentTab.SelectTypeFilterCommand}" CommandParameter="{Binding ViewModel.ContentTab.TypeFilters[4]}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource ContentFilterPillStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SelectedTypeFilter.Key}" Value="datapack">
+                                                <Setter Property="Appearance" Value="Primary" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                        </StackPanel>
+
+                        <!-- Sort + reload -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:Button
+                                Grid.Column="0"
+                                HorizontalAlignment="Left"
+                                Appearance="Secondary"
+                                Command="{Binding ViewModel.ContentTab.ToggleSortCommand}">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                        <Setter Property="Content" Value="↓ По алфавиту" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ContentTab.SortDescending}" Value="True">
+                                                <Setter Property="Content" Value="↑ По алфавиту" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button
+                                Grid.Column="1"
+                                Appearance="Secondary"
+                                Content="Перезагрузить"
+                                Icon="{ui:SymbolIcon ArrowSync24}"
+                                Command="{Binding ViewModel.ContentTab.LoadInstalledCommand}" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <ui:ProgressRing
+                                IsIndeterminate="True"
+                                Width="16" Height="16"
+                                Margin="0,0,8,0"
+                                Visibility="{Binding ViewModel.ContentTab.IsLoadingInstalled, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock
+                                Text="{Binding ViewModel.ContentTab.StatusText}"
+                                FontSize="12"
+                                TextWrapping="Wrap"
+                                Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                        </StackPanel>
+
+                        <TextBlock Text="Установлено" FontSize="15" FontWeight="SemiBold" Margin="4,0,0,12" />
+                        <ItemsControl ItemsSource="{Binding ViewModel.ContentTab.InstalledMods}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type modSources:InstalledMod}">
+                                    <Border
+                                        CornerRadius="10"
+                                        Background="{StaticResource LauncherSurfaceBrush}"
+                                        BorderBrush="{StaticResource LauncherHairlineBrush}"
+                                        BorderThickness="1"
+                                        Padding="14"
+                                        Margin="0,0,0,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                                <TextBlock
+                                                    Text="зависимость другого мода"
+                                                    FontSize="11"
+                                                    Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                                    Visibility="{Binding IsDependency, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                            <CheckBox
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,10,0"
+                                                Style="{StaticResource LauncherToggleSwitchStyle}"
+                                                ToolTip="Включить/выключить мод без удаления"
+                                                IsChecked="{Binding IsEnabled, Mode=OneWay}"
+                                                Command="{Binding ViewModel.ContentTab.ToggleEnabledCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                            <ui:Button
+                                                Grid.Column="2"
+                                                Appearance="Secondary"
+                                                Icon="{ui:SymbolIcon Delete24}"
+                                                Command="{Binding ViewModel.ContentTab.UninstallCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ==================== Files tab ==================== -->
+                <Grid Visibility="{Binding ViewModel.SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Files}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl Grid.Row="0" ItemsSource="{Binding ViewModel.FilesTab.Breadcrumb}" Margin="0,0,0,12">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type viewModels:BreadcrumbSegment}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button
+                                        Content="{Binding Label}"
+                                        Appearance="Transparent"
+                                        Padding="4,2"
+                                        Command="{Binding ViewModel.FilesTab.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}" />
+                                    <TextBlock Text="/" Margin="2,0" VerticalAlignment="Center" Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            Text="{Binding ViewModel.FilesTab.SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Margin="0,0,8,0" />
+                        <ui:Button Grid.Column="1" Content="Добавить файлы" Margin="0,0,8,0" Command="{Binding ViewModel.FilesTab.AddFilesCommand}" />
+                        <ui:Button Grid.Column="2" Content="Обновить" Command="{Binding ViewModel.FilesTab.LoadCommand}" />
+                    </Grid>
+
+                    <TextBlock
+                        Grid.Row="2"
+                        Text="{Binding ViewModel.FilesTab.StatusText}"
+                        Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding ViewModel.FilesTab.StatusText, Converter={StaticResource StringNotEmptyToVis}}" />
+
+                    <ItemsControl Grid.Row="3" ItemsSource="{Binding ViewModel.FilesTab.Entries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type services:FileEntry}">
+                                <Border
+                                    CornerRadius="10"
+                                    Background="{StaticResource LauncherSurfaceBrush}"
+                                    BorderBrush="{StaticResource LauncherHairlineBrush}"
+                                    BorderThickness="1"
+                                    Padding="12,10"
+                                    Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <ui:SymbolIcon
+                                            Grid.Column="0"
+                                            FontSize="16"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}">
+                                            <ui:SymbolIcon.Style>
+                                                <Style TargetType="ui:SymbolIcon">
+                                                    <Setter Property="Symbol" Value="Document24" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                                            <Setter Property="Symbol" Value="Folder24" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:SymbolIcon.Style>
+                                        </ui:SymbolIcon>
+
+                                        <ui:Button
+                                            Grid.Column="1"
+                                            Content="{Binding Name}"
+                                            Appearance="Transparent"
+                                            Padding="4,2"
+                                            HorizontalAlignment="Left"
+                                            HorizontalContentAlignment="Left"
+                                            Command="{Binding ViewModel.FilesTab.OpenCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}" />
+
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            Text="{Binding SizeLabel}"
+                                            FontSize="12"
+                                            VerticalAlignment="Center"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+
+                                        <TextBlock
+                                            Grid.Column="3"
+                                            Text="{Binding Modified, StringFormat='dd.MM.yy, HH:mm'}"
+                                            FontSize="12"
+                                            VerticalAlignment="Center"
+                                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                            <ui:Button
+                                                Appearance="Transparent"
+                                                Padding="6"
+                                                Icon="{ui:SymbolIcon Edit24}"
+                                                Command="{Binding ViewModel.FilesTab.RenameCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                            <ui:Button
+                                                Appearance="Transparent"
+                                                Padding="6"
+                                                Icon="{ui:SymbolIcon Delete24}"
+                                                Command="{Binding ViewModel.FilesTab.DeleteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+
+                <!-- ==================== Worlds tab ==================== -->
+                <StackPanel Visibility="{Binding ViewModel.SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Worlds}">
+                    <TextBlock
+                        Text="{Binding ViewModel.WorldsTab.StatusText}"
+                        Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                        HorizontalAlignment="Center"
+                        Margin="0,60,0,0"
+                        Visibility="{Binding ViewModel.WorldsTab.StatusText, Converter={StaticResource StringNotEmptyToVis}}" />
+
+                    <ItemsControl ItemsSource="{Binding ViewModel.WorldsTab.Worlds}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel MaxWidth="700" HorizontalAlignment="Left" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type viewModels:WorldEntry}">
+                                <Border
+                                    CornerRadius="10"
+                                    Background="{StaticResource LauncherSurfaceBrush}"
+                                    BorderBrush="{StaticResource LauncherHairlineBrush}"
+                                    BorderThickness="1"
+                                    Padding="14"
+                                    Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                            <TextBlock
+                                                Text="{Binding Modified, StringFormat='dd.MM.yy, HH:mm'}"
+                                                FontSize="11"
+                                                Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <ui:Button
+                                                Margin="0,0,8,0"
+                                                Appearance="Secondary"
+                                                Icon="{ui:SymbolIcon FolderOpen24}"
+                                                Command="{Binding ViewModel.WorldsTab.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                            <ui:Button
+                                                Appearance="Secondary"
+                                                Icon="{ui:SymbolIcon Delete24}"
+                                                Command="{Binding ViewModel.WorldsTab.DeleteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- ==================== Logs tab ==================== -->
+                <!-- Height is bound to the window (see ScrollViewerWindowHeightBehavior) so the log
+                     panel's bottom edge tracks the launcher window's bottom edge instead of stopping at
+                     a fixed 500px with dead space below it. Offset approximates everything above this
+                     tab (back link, header, separator, tab bar, page margins). -->
+                <Grid
+                    Visibility="{Binding ViewModel.SelectedTab, Converter={StaticResource TabVisible}, ConverterParameter=Logs}"
+                    behaviors:ScrollViewerWindowHeightBehavior.Enabled="True"
+                    behaviors:ScrollViewerWindowHeightBehavior.Offset="260">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="180" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            Text="{Binding ViewModel.LogsTab.LogSearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Margin="0,0,12,0"
+                            VerticalAlignment="Center" />
+                        <ComboBox
+                            Grid.Column="1"
+                            ItemsSource="{Binding ViewModel.LogsTab.RunOptions}"
+                            SelectedItem="{Binding ViewModel.LogsTab.SelectedRun}"
+                            DisplayMemberPath="Label" />
+                    </Grid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                        <RadioButton
+                            Content="Все" GroupName="DetailLogFilter" Margin="0,0,10,0"
+                            IsChecked="{Binding ViewModel.LogsTab.LogFilter, Converter={StaticResource LogFilterConverter}, ConverterParameter=All}" />
+                        <RadioButton
+                            Content="Ошибки" GroupName="DetailLogFilter" Margin="0,0,10,0"
+                            IsChecked="{Binding ViewModel.LogsTab.LogFilter, Converter={StaticResource LogFilterConverter}, ConverterParameter=Error}" />
+                        <RadioButton
+                            Content="Предупреждения" GroupName="DetailLogFilter" Margin="0,0,10,0"
+                            IsChecked="{Binding ViewModel.LogsTab.LogFilter, Converter={StaticResource LogFilterConverter}, ConverterParameter=Warn}" />
+                        <RadioButton
+                            Content="Инфо" GroupName="DetailLogFilter"
+                            IsChecked="{Binding ViewModel.LogsTab.LogFilter, Converter={StaticResource LogFilterConverter}, ConverterParameter=Info}" />
+                    </StackPanel>
+
+                    <Border
+                        Grid.Row="2"
+                        CornerRadius="12"
+                        Background="{StaticResource LauncherSurfaceBrush}"
+                        BorderBrush="{StaticResource LauncherHairlineBrush}"
+                        BorderThickness="1">
+                        <Grid>
+                            <TextBlock
+                                Text="Логи появятся здесь после запуска игры."
+                                Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding ViewModel.LogsTab.VisibleLogLines.Count, Converter={StaticResource ZeroCountToVis}}" />
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                                <ItemsControl ItemsSource="{Binding ViewModel.LogsTab.VisibleLogLines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                Text="{Binding Text}"
+                                                FontFamily="Consolas"
+                                                FontSize="12"
+                                                TextWrapping="Wrap"
+                                                Margin="0,0,0,2">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{StaticResource LauncherMutedForegroundBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                <Setter Property="Foreground" Value="#F87171" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                                                <Setter Property="Foreground" Value="#FBBF24" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Page>

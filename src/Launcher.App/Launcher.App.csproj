@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Launcher.Core\Launcher.Core.csproj" />
+    <ProjectReference Include="..\Launcher.Auth\Launcher.Auth.csproj" />
+    <ProjectReference Include="..\Launcher.Loaders\Launcher.Loaders.csproj" />
+    <ProjectReference Include="..\Launcher.ModSources\Launcher.ModSources.csproj" />
+    <ProjectReference Include="..\Launcher.Backend\Launcher.Backend.csproj" />
+    <ProjectReference Include="..\Launcher.Common\Launcher.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
+    <Product>Amethyst Launcher</Product>
+    <AssemblyTitle>Amethyst Launcher</AssemblyTitle>
+    <Company>Amethyst Launcher</Company>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- Logo bitmap used by the window/taskbar icon and the titlebar mark. -->
+  <ItemGroup>
+    <Resource Include="Assets\logo.png" />
+  </ItemGroup>
+
+  <!-- Bundled zapret DPI-bypass (Flowseal/zapret-discord-youtube). Ships next to the app so the
+       "Обход блокировок" toggle can start it. Copied as-is; the launcher never modifies these. -->
+  <ItemGroup>
+    <None Include="zapret\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

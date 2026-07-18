@@ -1,0 +1,5 @@
+# Never leave this file empty
+domain.example.abc
+# --- MC Launcher: домены, которые чинит обход (моды и облако лаунчера) ---
+modrinth.com
+supabase.co

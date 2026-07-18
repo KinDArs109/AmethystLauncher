@@ -1,0 +1,171 @@
+<Page x:Class="Launcher.App.Views.Pages.LibraryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:viewModels="clr-namespace:Launcher.App.ViewModels"
+      xmlns:converters="clr-namespace:Launcher.App.Converters"
+      xmlns:instances="clr-namespace:Launcher.Core.Instances;assembly=Launcher.Core"
+      xmlns:behaviors="clr-namespace:Launcher.App.Behaviors"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:LibraryViewModel}"
+      d:DesignWidth="1000" d:DesignHeight="700"
+      Title="LibraryPage"
+      Opacity="0"
+      RenderTransformOrigin="0.5,0.5">
+
+    <Page.RenderTransform>
+        <TranslateTransform Y="14" />
+    </Page.RenderTransform>
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource PageEnterStoryboard}" />
+        </EventTrigger>
+    </Page.Triggers>
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:ZeroCountToVisibilityConverter x:Key="ZeroCountToVis" />
+        <converters:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis" />
+        <converters:LastPlayedTextConverter x:Key="LastPlayedText" />
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:ScrollViewerWindowHeightBehavior.Enabled="True">
+        <StackPanel Margin="40,32,40,32">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                <TextBlock Text="Библиотека" FontSize="28" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <ui:ProgressRing
+                    IsIndeterminate="True"
+                    Width="18" Height="18"
+                    Margin="12,0,0,0"
+                    Visibility="{Binding ViewModel.IsLoading, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="170" />
+                </Grid.ColumnDefinitions>
+
+                <ui:TextBox
+                    Grid.Column="0"
+                    Text="{Binding ViewModel.SearchText, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="Поиск по сборкам..."
+                    Icon="{ui:SymbolIcon Search24}"
+                    VerticalAlignment="Center" />
+
+                <ComboBox
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    ItemsSource="{Binding ViewModel.GroupOptions}"
+                    SelectedItem="{Binding ViewModel.SelectedGroupOption}"
+                    DisplayMemberPath="Label" />
+
+                <ComboBox
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    ItemsSource="{Binding ViewModel.SortOptions}"
+                    SelectedItem="{Binding ViewModel.SelectedSortOption}"
+                    DisplayMemberPath="Label" />
+            </Grid>
+
+            <TextBlock
+                Text="{Binding ViewModel.StatusText}"
+                Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                TextWrapping="Wrap"
+                Margin="0,0,0,16"
+                Visibility="{Binding ViewModel.Instances.Count, Converter={StaticResource ZeroCountToVis}}" />
+
+            <ItemsControl ItemsSource="{Binding ViewModel.Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type viewModels:InstanceGroupViewModel}">
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock
+                                Text="{Binding Name}"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Margin="4,0,0,12"
+                                Foreground="{StaticResource LauncherAccentSoftBrush}"
+                                Visibility="{Binding Name, Converter={StaticResource StringNotEmptyToVis}}" />
+
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type instances:LauncherInstance}">
+                                        <!-- Compact horizontal row (icon-left, text-right) — matches Modrinth App's Library density.
+                                             Fixed 256px so three fit per row at the default 1280px window; wider windows fit more
+                                             cards instead of stretching these. -->
+                                        <ui:Button
+                                            Width="256"
+                                            Height="72"
+                                            Margin="0,0,12,12"
+                                            Padding="12"
+                                            Style="{StaticResource LauncherCardButtonStyle}"
+                                            HorizontalContentAlignment="Left"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding ViewModel.OpenInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="48" />
+                                                    <ColumnDefinition Width="12" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border
+                                                    Grid.Column="0"
+                                                    Width="48" Height="48"
+                                                    CornerRadius="{StaticResource LauncherRadiusMd}"
+                                                    Background="{StaticResource LauncherSurfaceMutedBrush}">
+                                                    <ui:SymbolIcon
+                                                        Symbol="CubeMultiple24"
+                                                        FontSize="20"
+                                                        Foreground="{StaticResource LauncherAccentSoftBrush}"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                    <TextBlock
+                                                        Text="{Binding Name}"
+                                                        FontWeight="SemiBold"
+                                                        FontSize="14"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                        <ui:SymbolIcon
+                                                            Symbol="Folder24"
+                                                            FontSize="12"
+                                                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Text="{Binding LoaderType}"
+                                                            FontSize="12"
+                                                            Margin="4,0,0,0"
+                                                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                                        <TextBlock
+                                                            Text="{Binding LastPlayedAt, Converter={StaticResource LastPlayedText}}"
+                                                            FontSize="12"
+                                                            Margin="8,0,0,0"
+                                                            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </ui:Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

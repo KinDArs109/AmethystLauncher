@@ -1,0 +1,78 @@
+<ui:ContentDialog x:Class="Launcher.App.Views.CreateInstanceDialog"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:viewModels="clr-namespace:Launcher.App.ViewModels"
+      xmlns:converters="clr-namespace:Launcher.App.Converters"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:CreateInstanceViewModel}"
+      Style="{StaticResource {x:Type ui:ContentDialog}}"
+      Title="Создание сборки"
+      PrimaryButtonText="Создать сборку"
+      CloseButtonText="Отмена"
+      IsPrimaryButtonEnabled="{Binding CanCreate}"
+      DialogWidth="420">
+
+    <ui:ContentDialog.Resources>
+        <converters:EnumEqualsConverter x:Key="EnumEquals" />
+        <converters:ModLoaderTypeToVisibilityConverter x:Key="VanillaToCollapsed" />
+        <converters:OtherLoaderVersionModeVisibilityConverter x:Key="OtherModeToVisible" />
+    </ui:ContentDialog.Resources>
+
+    <StackPanel Margin="0,8,0,0">
+        <TextBlock Text="Название" Margin="0,0,0,4" />
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16" />
+
+        <TextBlock Text="Загрузчик" Margin="0,0,0,8" />
+        <WrapPanel Margin="0,0,0,16">
+            <RadioButton
+                Content="Vanilla" GroupName="CreateInstanceLoader" Margin="0,0,16,8"
+                IsChecked="{Binding SelectedLoaderType, Converter={StaticResource EnumEquals}, ConverterParameter=Vanilla}" />
+            <RadioButton
+                Content="Fabric" GroupName="CreateInstanceLoader" Margin="0,0,16,8"
+                IsChecked="{Binding SelectedLoaderType, Converter={StaticResource EnumEquals}, ConverterParameter=Fabric}" />
+            <RadioButton
+                Content="Quilt" GroupName="CreateInstanceLoader" Margin="0,0,16,8"
+                IsChecked="{Binding SelectedLoaderType, Converter={StaticResource EnumEquals}, ConverterParameter=Quilt}" />
+            <RadioButton
+                Content="Forge" GroupName="CreateInstanceLoader" Margin="0,0,16,8"
+                IsChecked="{Binding SelectedLoaderType, Converter={StaticResource EnumEquals}, ConverterParameter=Forge}" />
+        </WrapPanel>
+
+        <TextBlock Text="Версия игры" Margin="0,0,0,4" />
+        <ComboBox
+            ItemsSource="{Binding GameVersions}"
+            SelectedItem="{Binding SelectedGameVersion}"
+            DisplayMemberPath="Id"
+            Margin="0,0,0,16" />
+
+        <StackPanel Visibility="{Binding SelectedLoaderType, Converter={StaticResource VanillaToCollapsed}}">
+            <TextBlock Text="Версия загрузчика" Margin="0,0,0,8" />
+            <WrapPanel Margin="0,0,0,8">
+                <RadioButton
+                    Content="Стабильная" GroupName="CreateInstanceLoaderVersionMode" Margin="0,0,16,8"
+                    IsChecked="{Binding LoaderVersionMode, Converter={StaticResource EnumEquals}, ConverterParameter=Stable}" />
+                <RadioButton
+                    Content="Последняя" GroupName="CreateInstanceLoaderVersionMode" Margin="0,0,16,8"
+                    IsChecked="{Binding LoaderVersionMode, Converter={StaticResource EnumEquals}, ConverterParameter=Latest}" />
+                <RadioButton
+                    Content="Другая" GroupName="CreateInstanceLoaderVersionMode" Margin="0,0,16,8"
+                    IsChecked="{Binding LoaderVersionMode, Converter={StaticResource EnumEquals}, ConverterParameter=Other}" />
+            </WrapPanel>
+            <ComboBox
+                ItemsSource="{Binding LoaderVersions}"
+                SelectedItem="{Binding SelectedLoaderVersion}"
+                DisplayMemberPath="Version"
+                Visibility="{Binding LoaderVersionMode, Converter={StaticResource OtherModeToVisible}}"
+                Margin="0,0,0,8" />
+        </StackPanel>
+
+        <TextBlock
+            Text="{Binding StatusText}"
+            FontSize="12"
+            TextWrapping="Wrap"
+            Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+    </StackPanel>
+</ui:ContentDialog>

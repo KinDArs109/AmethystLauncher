@@ -1,0 +1,138 @@
+<Page x:Class="Launcher.App.Views.Pages.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:viewModels="clr-namespace:Launcher.App.ViewModels"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:SettingsViewModel}"
+      d:DesignWidth="900" d:DesignHeight="600"
+      Title="SettingsPage"
+      Opacity="0"
+      RenderTransformOrigin="0.5,0.5">
+
+    <Page.RenderTransform>
+        <TranslateTransform Y="14" />
+    </Page.RenderTransform>
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource PageEnterStoryboard}" />
+        </EventTrigger>
+    </Page.Triggers>
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Margin="40,32,40,32">
+        <StackPanel MaxWidth="560" HorizontalAlignment="Left">
+            <TextBlock Text="Настройки" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,24" />
+
+            <!-- DPI-bypass (zapret) toggle — lets players in Russia reach Modrinth/Supabase without a VPN. -->
+            <Border
+                CornerRadius="12"
+                Background="{StaticResource LauncherSurfaceBrush}"
+                BorderBrush="{StaticResource LauncherHairlineBrush}"
+                BorderThickness="1"
+                Padding="20"
+                Margin="0,0,0,16">
+                <StackPanel>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Обход блокировок" FontWeight="SemiBold" />
+                            <TextBlock
+                                Text="Включи, если не грузятся моды или новости. Работает на уровне системы (zapret), VPN не нужен."
+                                FontSize="12"
+                                Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                TextWrapping="Wrap"
+                                MaxWidth="420"
+                                HorizontalAlignment="Left"
+                                Margin="0,2,0,0" />
+                        </StackPanel>
+                        <ui:ToggleSwitch
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ViewModel.BypassEnabled, Mode=TwoWay}" />
+                    </Grid>
+
+                    <TextBlock
+                        Text="{Binding ViewModel.BypassStatusText}"
+                        FontSize="12"
+                        Foreground="{StaticResource LauncherAccentSoftBrush}"
+                        TextWrapping="Wrap"
+                        Margin="0,4,0,0" />
+
+                    <Border
+                        Background="{StaticResource LauncherSurfaceMutedBrush}"
+                        CornerRadius="8"
+                        Padding="12"
+                        Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Info24" FontSize="16" Foreground="{StaticResource LauncherMutedForegroundBrush}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                            <TextBlock
+                                FontSize="11.5"
+                                TextWrapping="Wrap"
+                                MaxWidth="440"
+                                Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                                Text="При включении Windows попросит права администратора — это нужно обходу. Антивирус может ругаться на файл WinDivert — это не вирус, а часть обхода (можно добавить в исключения)." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+
+            <Border
+                CornerRadius="12"
+                Background="{StaticResource LauncherSurfaceBrush}"
+                BorderBrush="{StaticResource LauncherHairlineBrush}"
+                BorderThickness="1"
+                Padding="20"
+                Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Память (ОЗУ)" FontWeight="SemiBold" Margin="0,0,0,16" />
+
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Максимум" FontSize="12" Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding ViewModel.MaxRamMb, StringFormat={}{0} МБ}" FontSize="12" Foreground="{StaticResource LauncherAccentSoftBrush}" />
+                    </Grid>
+                    <Slider
+                        Minimum="512" Maximum="16384"
+                        TickFrequency="512" SmallChange="256" LargeChange="1024"
+                        IsSnapToTickEnabled="True"
+                        Value="{Binding ViewModel.MaxRamMb}" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                CornerRadius="12"
+                Background="{StaticResource LauncherSurfaceBrush}"
+                BorderBrush="{StaticResource LauncherHairlineBrush}"
+                BorderThickness="1"
+                Padding="20"
+                Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Java" FontWeight="SemiBold" Margin="0,0,0,4" />
+                    <TextBlock
+                        Text="По умолчанию лаунчер сам скачивает нужную версию Java. Укажите путь только если хотите использовать свою."
+                        FontSize="12"
+                        Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,10" />
+                    <TextBox Text="{Binding ViewModel.JavaPathOverride, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </Border>
+
+            <ui:Button Content="Сохранить" Appearance="Primary" Command="{Binding ViewModel.SaveCommand}" HorizontalAlignment="Left" />
+            <TextBlock Text="{Binding ViewModel.StatusText}" Margin="0,12,0,0" Foreground="{StaticResource LauncherMutedForegroundBrush}" />
+        </StackPanel>
+    </Grid>
+</Page>

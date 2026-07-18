@@ -1,0 +1,481 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                    xmlns:converters="clr-namespace:Launcher.App.Converters">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Brushes.xaml" />
+        <ResourceDictionary Source="Effects.xaml" />
+        <ResourceDictionary Source="Motion.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <converters:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBool" />
+
+    <!--
+        Glass card — the base surface for every card-shaped block in the app (hero, stat tiles,
+        instance cards, list rows). Opt in explicitly via Style="{StaticResource LauncherGlassCardStyle}"
+        rather than an implicit Border style, since plain Borders are also used for small non-card
+        chrome (icon swatches, dividers) that shouldn't pick this up.
+    -->
+    <Style x:Key="LauncherGlassCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource LauncherGlassSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource LauncherRadiusLg}" />
+        <Setter Property="Effect" Value="{StaticResource LauncherElevation1}" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleIn}" />
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleOut}" />
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource LauncherGlassSurfaceHoverBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderHoverBrush}" />
+                <Setter Property="Effect" Value="{StaticResource LauncherElevation2}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Non-interactive glass card: same look, no hover scale/highlight. Use for purely informational
+         panels (docked Друзья/Новости cards) so only actually-clickable surfaces animate. -->
+    <Style x:Key="LauncherGlassStaticCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource LauncherGlassSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource LauncherRadiusLg}" />
+        <Setter Property="Effect" Value="{StaticResource LauncherElevation1}" />
+    </Style>
+
+    <!-- Flatter variant for nested rows inside a card (no shadow/scale — avoids double elevation). -->
+    <Style x:Key="LauncherGlassRowStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource LauncherSurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource LauncherRadiusMd}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource LauncherSurfaceHoverBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Clickable glass card (ui:Button used as a whole-card hit target, e.g. Library instance tiles). -->
+    <Style x:Key="LauncherCardButtonStyle" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Background" Value="{StaticResource LauncherGlassSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Effect" Value="{StaticResource LauncherElevation1}" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleIn}" />
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleOut}" />
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource LauncherGlassSurfaceHoverBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource LauncherGlassBorderHoverBrush}" />
+                <Setter Property="Effect" Value="{StaticResource LauncherElevation2}" />
+            </Trigger>
+            <!-- Tactile press feedback: spring the whole card down/up (scale-feedback per motion.dev). -->
+            <Trigger Property="IsPressed" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource PressScaleDown}" />
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource PressScaleUp}" />
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        Animated toggle switch — recolored port of uiverse.io/chicogale/brown-panda-75 ("cyber toggle"):
+        a recessed dark track, a thumb that springs across (motion.dev: spring easing, ~220ms), and three
+        status dots that light up with the accent colour when on. Kept as a CheckBox style so existing
+        IsChecked/Command bindings keep working unchanged; only the visual + motion are ours, and the
+        original's cyan/near-black palette is swapped for the launcher's violet accent tokens.
+    -->
+    <Style x:Key="LauncherToggleSwitchStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource LauncherForegroundBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <Border
+                            x:Name="Track"
+                            Width="46" Height="26"
+                            CornerRadius="13"
+                            VerticalAlignment="Center"
+                            Background="#1A1729"
+                            BorderBrush="{StaticResource LauncherGlassBorderBrush}"
+                            BorderThickness="1">
+                            <Grid>
+                                <!-- Recessed inner bezel, matching the reference's layered track. -->
+                                <Border
+                                    Margin="2"
+                                    CornerRadius="11"
+                                    Background="{StaticResource LauncherSurfaceHoverBrush}" />
+
+                                <!-- Status dots — dark by default, light up with the accent colour when on. -->
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,7,0">
+                                    <Ellipse x:Name="Dot1" Width="3" Height="3" Margin="1,0" Fill="{StaticResource LauncherMutedForegroundBrush}" Opacity="0.4" />
+                                    <Ellipse x:Name="Dot2" Width="3" Height="3" Margin="1,0" Fill="{StaticResource LauncherMutedForegroundBrush}" Opacity="0.4" />
+                                </StackPanel>
+
+                                <Border
+                                    x:Name="Thumb"
+                                    Width="18" Height="18"
+                                    CornerRadius="9"
+                                    HorizontalAlignment="Left"
+                                    Margin="3,0,0,0"
+                                    Background="White"
+                                    RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform x:Name="ThumbTransform" X="0" />
+                                    </Border.RenderTransform>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="1" BlurRadius="4" Opacity="0.4" />
+                                    </Border.Effect>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <ContentPresenter
+                            x:Name="Label"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HasContent" Value="False">
+                            <Setter TargetName="Label" Property="Margin" Value="0" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Track" Property="BorderBrush" Value="Transparent" />
+                            <Setter TargetName="Track" Property="Effect" Value="{StaticResource LauncherAccentGlow}" />
+                            <Setter TargetName="Dot1" Property="Fill" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Setter TargetName="Dot1" Property="Opacity" Value="1" />
+                            <Setter TargetName="Dot2" Property="Fill" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Setter TargetName="Dot2" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="ThumbTransform"
+                                            Storyboard.TargetProperty="X"
+                                            To="20" Duration="0:0:0.22"
+                                            EasingFunction="{StaticResource LauncherEaseSpring}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="ThumbTransform"
+                                            Storyboard.TargetProperty="X"
+                                            To="0" Duration="0:0:0.18"
+                                            EasingFunction="{StaticResource LauncherEaseOut}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{StaticResource LauncherGlassBorderHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Create-instance button — recolored port of uiverse.io/catraco/fluffy-quail-74: a plain circular
+        outline "+" that rotates 90° and fills solid on hover (motion.dev: cubic-out, ~300ms, matching
+        the reference's own 300ms duration). The original was zinc/near-black; recoloured to the
+        launcher's muted-foreground-at-rest / accent-gradient-on-hover pair.
+    -->
+    <Style x:Key="LauncherCreateRotateButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <RotateTransform Angle="0" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Width="40" Height="40" Background="Transparent">
+                        <Ellipse
+                            x:Name="Circle"
+                            Width="36" Height="36"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Stroke="{StaticResource LauncherMutedForegroundBrush}"
+                            StrokeThickness="1.5"
+                            Fill="Transparent" />
+                        <Border x:Name="BarH" Width="14" Height="2" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{StaticResource LauncherMutedForegroundBrush}" />
+                        <Border x:Name="BarV" Width="2" Height="14" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{StaticResource LauncherMutedForegroundBrush}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Circle" Property="Fill" Value="{StaticResource LauncherAccentGradientBrush}" />
+                            <Setter TargetName="Circle" Property="Stroke" Value="Transparent" />
+                            <Setter TargetName="BarH" Property="Background" Value="White" />
+                            <Setter TargetName="BarV" Property="Background" Value="White" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Circle" Property="Fill" Value="{StaticResource LauncherAccentGradientHoverBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                To="90" Duration="0:0:0.3" EasingFunction="{StaticResource LauncherEaseOut}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                To="0" Duration="0:0:0.3" EasingFunction="{StaticResource LauncherEaseOut}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        Floating-label input — recolored port of uiverse.io/liyaxu123/warm-eel-62: no box, just an
+        underline that lights up with the accent colour on focus, and a label that starts inline as a
+        placeholder and springs up into a caption once the field is focused or has a value. Set Tag to
+        the label text: Tag="Никнейм".
+    -->
+    <Style x:Key="LauncherFloatingLabelInputStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource LauncherForegroundBrush}" />
+        <Setter Property="CaretBrush" Value="{StaticResource LauncherForegroundBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border
+                            x:Name="Underline"
+                            BorderThickness="0,0,0,2"
+                            BorderBrush="{StaticResource LauncherHairlineBrush}"
+                            VerticalAlignment="Bottom" />
+                        <TextBlock
+                            x:Name="Label"
+                            Text="{TemplateBinding Tag}"
+                            IsHitTestVisible="False"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            FontSize="15"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,10"
+                            RenderTransformOrigin="0,1">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform Y="0" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom" Margin="0,0,0,7" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Underline" Property="BorderBrush" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Setter TargetName="Label" Property="Foreground" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-22" Duration="0:0:0.16" EasingFunction="{StaticResource LauncherEaseSpring}" />
+                                        <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="FontSize" To="11" Duration="0:0:0.16" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Text, Converter={StaticResource StringNotEmptyToBool}}" Value="True">
+                            <Setter TargetName="Label" Property="FontSize" Value="11" />
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-22" Duration="0" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Password variant of LauncherFloatingLabelInputStyle — PasswordBox doesn't expose Password as a
+        bindable DependencyProperty for security reasons, so there's no "has text" DataTrigger here (only
+        IsFocused floats the label); code-behind reads PasswordChanged to sync the ViewModel instead.
+    -->
+    <Style x:Key="LauncherFloatingLabelPasswordStyle" TargetType="PasswordBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource LauncherForegroundBrush}" />
+        <Setter Property="CaretBrush" Value="{StaticResource LauncherForegroundBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Grid>
+                        <Border
+                            x:Name="Underline"
+                            BorderThickness="0,0,0,2"
+                            BorderBrush="{StaticResource LauncherHairlineBrush}"
+                            VerticalAlignment="Bottom" />
+                        <TextBlock
+                            x:Name="Label"
+                            Text="{TemplateBinding Tag}"
+                            IsHitTestVisible="False"
+                            Foreground="{StaticResource LauncherMutedForegroundBrush}"
+                            FontSize="15"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,10"
+                            RenderTransformOrigin="0,1">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform Y="0" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom" Margin="0,0,0,7" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Underline" Property="BorderBrush" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Setter TargetName="Label" Property="Foreground" Value="{StaticResource LauncherAccentSoftBrush}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-22" Duration="0:0:0.16" EasingFunction="{StaticResource LauncherEaseSpring}" />
+                                        <DoubleAnimation Storyboard.TargetName="Label" Storyboard.TargetProperty="FontSize" To="11" Duration="0:0:0.16" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Auth pill button — recolored port of uiverse.io/bociKond/dull-mole-77's submit button: a fully
+        rounded button that swaps its muted fill for the accent gradient on hover. Used by the local
+        login/register form.
+    -->
+    <Style x:Key="LauncherAuthPillButtonStyle" TargetType="Button">
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{StaticResource LauncherSurfaceHoverBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="23">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{StaticResource LauncherAccentGradientBrush}" />
+                            <Setter TargetName="Bg" Property="Effect" Value="{StaticResource LauncherAccentGlow}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Gradient "shiny" CTA button — layers a glow + spring scale on top of wpfui's own Primary
+        button so Icon/Content layout stays exactly as wpfui renders it; only motion + glow + the
+        gradient sweep are ours.
+    -->
+    <Style x:Key="LauncherGlowButtonStyle" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Background" Value="{StaticResource LauncherAccentGradientBrush}" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleIn}" />
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource HoverScaleOut}" />
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource LauncherAccentGradientHoverBrush}" />
+                <Setter Property="Effect" Value="{StaticResource LauncherAccentGlow}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource PressScaleDown}" />
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource PressScaleUp}" />
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

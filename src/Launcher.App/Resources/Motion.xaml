@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Effects.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        Self-targeting micro-interaction storyboards (motion.dev vocabulary: spring-in / cubic-out,
+        150-300ms). No Storyboard.TargetName is set, so these only work when started from a Trigger
+        on the element that owns the RenderTransform=ScaleTransform being animated — see
+        Controls.xaml's card/button styles for the Setter that establishes it. Sharing one instance
+        across every styled element is safe because Storyboard is a Freezable, exactly like Brush.
+    -->
+    <Storyboard x:Key="HoverScaleIn">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+            To="1.02" Duration="0:0:0.18" EasingFunction="{StaticResource LauncherEaseSpring}" />
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+            To="1.02" Duration="0:0:0.18" EasingFunction="{StaticResource LauncherEaseSpring}" />
+    </Storyboard>
+    <Storyboard x:Key="HoverScaleOut">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+            To="1" Duration="0:0:0.15" EasingFunction="{StaticResource LauncherEaseOut}" />
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+            To="1" Duration="0:0:0.15" EasingFunction="{StaticResource LauncherEaseOut}" />
+    </Storyboard>
+
+    <Storyboard x:Key="PressScaleDown">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+            To="0.97" Duration="0:0:0.09" EasingFunction="{StaticResource LauncherEaseOut}" />
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+            To="0.97" Duration="0:0:0.09" EasingFunction="{StaticResource LauncherEaseOut}" />
+    </Storyboard>
+    <Storyboard x:Key="PressScaleUp">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+            To="1.02" Duration="0:0:0.12" EasingFunction="{StaticResource LauncherEaseSpring}" />
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+            To="1.02" Duration="0:0:0.12" EasingFunction="{StaticResource LauncherEaseSpring}" />
+    </Storyboard>
+
+    <!--
+        Page-enter transition — fade + rise, applied per-page via a Loaded EventTrigger on the
+        page's root panel (which must carry a TranslateTransform + Opacity=0 starting point).
+        Mirrors motion.dev's "hierarchy-motion": entering content rises from slightly below.
+    -->
+    <Storyboard x:Key="PageEnterStoryboard">
+        <DoubleAnimation
+            Storyboard.TargetProperty="Opacity"
+            From="0" To="1" Duration="0:0:0.28" EasingFunction="{StaticResource LauncherEaseOut}" />
+        <DoubleAnimation
+            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+            From="14" To="0" Duration="0:0:0.32" EasingFunction="{StaticResource LauncherEaseOut}" />
+    </Storyboard>
+
+</ResourceDictionary>
